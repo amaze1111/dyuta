@@ -12,7 +12,7 @@
 // ─── Zones ────────────────────────────────────────────────────────────────────
 
 const ZONES = [
-  { name: 'Capital',        capacity: 11, majority: 6,  points: 11, adjacentZones: [1, 2, 4],          volatile: true },
+  { name: 'North',        capacity: 11, majority: 6,  points: 11, adjacentZones: [1, 2, 4],          volatile: true },
   { name: 'Northwest',      capacity: 9,  majority: 5,  points: 9,  adjacentZones: [0, 2, 3],          volatile: true },
   { name: 'Northeast',      capacity: 6,  majority: 4,  points: 6,  adjacentZones: [0, 1, 4, 5],       volatile: true },
   { name: 'West',           capacity: 9,  majority: 5,  points: 9,  adjacentZones: [1, 2, 4, 6],       volatile: true },
