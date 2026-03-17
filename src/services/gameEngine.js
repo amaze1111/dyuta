@@ -12,115 +12,115 @@
 // ─── Zones ────────────────────────────────────────────────────────────────────
 
 const ZONES = [
-  { name: 'North',        capacity: 11, majority: 6,  points: 11, adjacentZones: [1, 2, 4],          volatile: true },
-  { name: 'Northwest',      capacity: 9,  majority: 5,  points: 9,  adjacentZones: [0, 2, 3],          volatile: true },
-  { name: 'Northeast',      capacity: 6,  majority: 4,  points: 6,  adjacentZones: [0, 1, 4, 5],       volatile: true },
-  { name: 'West',           capacity: 9,  majority: 5,  points: 9,  adjacentZones: [1, 2, 4, 6],       volatile: true },
-  { name: 'Central',        capacity: 5,  majority: 3,  points: 5,  adjacentZones: [0, 2, 3, 5, 6, 7], volatile: true },
-  { name: 'East',           capacity: 9,  majority: 5,  points: 9,  adjacentZones: [2, 4, 7, 8],       volatile: true },
-  { name: 'Southwest',      capacity: 6,  majority: 4,  points: 6,  adjacentZones: [3, 4, 7],          volatile: true },
-  { name: 'South',          capacity: 11, majority: 6,  points: 11, adjacentZones: [4, 5, 6, 8],       volatile: true },
-  { name: 'Southeast',      capacity: 6,  majority: 4,  points: 6,  adjacentZones: [5, 7],             volatile: true },
+  { name: 'Northgate',      capacity: 11, majority: 6,  points: 11, adjacentZones: [1, 2, 4],          volatile: true },
+  { name: 'Millbrook',      capacity: 9,  majority: 5,  points: 9,  adjacentZones: [0, 2, 3],          volatile: true },
+  { name: 'Harborview',     capacity: 6,  majority: 4,  points: 6,  adjacentZones: [0, 1, 4, 5],       volatile: true },
+  { name: 'Westfield',      capacity: 9,  majority: 5,  points: 9,  adjacentZones: [1, 2, 4, 6],       volatile: true },
+  { name: 'Capitol Hill',   capacity: 5,  majority: 3,  points: 5,  adjacentZones: [0, 2, 3, 5, 6, 7], volatile: true },
+  { name: 'Eastport',       capacity: 9,  majority: 5,  points: 9,  adjacentZones: [2, 4, 7, 8],       volatile: true },
+  { name: 'Riverside',      capacity: 6,  majority: 4,  points: 6,  adjacentZones: [3, 4, 7],          volatile: true },
+  { name: 'Southdown',      capacity: 11, majority: 6,  points: 11, adjacentZones: [4, 5, 6, 8],       volatile: true },
+  { name: 'Bayshore',       capacity: 6,  majority: 4,  points: 6,  adjacentZones: [5, 7],             volatile: true },
 ];
 
 // ─── Ideology Cards ───────────────────────────────────────────────────────────
 
 const IDEOLOGY_CARDS = [
   { id: 'ic_01', question: 'Should corporations be allowed to fund political campaigns without limits?',
-    a: { text: 'Yes — money is speech, and free markets fuel democracy.', ideology: 'capitalist', resources: { funds: 2, clout: 1 } },
-    b: { text: 'No — it corrupts democracy and silences ordinary citizens.', ideology: 'idealist', resources: { trust: 2, media: 1 } } },
+    a: { text: 'Yes — money is speech, and free markets fuel democracy.', ideology: 'corporatist', resources: { gold: 2, sway: 1 } },
+    b: { text: 'No — it corrupts democracy and silences ordinary citizens.', ideology: 'progressive', resources: { cred: 2, press: 1 } } },
   { id: 'ic_02', question: 'Should the government prioritize national identity over multiculturalism?',
-    a: { text: 'Yes — a shared identity unifies and strengthens the nation.', ideology: 'supremo', resources: { clout: 2, funds: 1 } },
-    b: { text: 'No — diversity is our strength and must be celebrated.', ideology: 'idealist', resources: { trust: 2, clout: 1 } } },
+    a: { text: 'Yes — a shared identity unifies and strengthens the nation.', ideology: 'nationalist', resources: { sway: 2, gold: 1 } },
+    b: { text: 'No — diversity is our strength and must be celebrated.', ideology: 'progressive', resources: { cred: 2, sway: 1 } } },
   { id: 'ic_03', question: 'A scandal breaks. Do you hold a press conference or let allies spin it?',
-    a: { text: 'Hold a dramatic press conference — dominate the narrative!', ideology: 'showstopper', resources: { media: 3 } },
-    b: { text: 'Quietly manage it. Trust the people to see through the noise.', ideology: 'idealist', resources: { trust: 2, funds: 1 } } },
+    a: { text: 'Hold a dramatic press conference — dominate the narrative!', ideology: 'populist', resources: { press: 3 } },
+    b: { text: 'Quietly manage it. cred the people to see through the noise.', ideology: 'progressive', resources: { cred: 2, gold: 1 } } },
   { id: 'ic_04', question: 'Should universal basic income replace traditional welfare programs?',
-    a: { text: 'Yes — streamline the system and let markets do the rest.', ideology: 'capitalist', resources: { funds: 2, media: 1 } },
-    b: { text: 'No — targeted support serves the vulnerable better.', ideology: 'idealist', resources: { trust: 3 } } },
+    a: { text: 'Yes — streamline the system and let markets do the rest.', ideology: 'corporatist', resources: { gold: 2, press: 1 } },
+    b: { text: 'No — targeted support serves the vulnerable better.', ideology: 'progressive', resources: { cred: 3 } } },
   { id: 'ic_05', question: 'A rival spreads misinformation about you. Your response?',
-    a: { text: 'Launch a counter-campaign — louder, bolder, trending.', ideology: 'showstopper', resources: { media: 2, clout: 1 } },
-    b: { text: 'Publicly call it out with facts — integrity wins long-term.', ideology: 'idealist', resources: { trust: 2, funds: 1 } } },
+    a: { text: 'Launch a counter-campaign — louder, bolder, trending.', ideology: 'populist', resources: { press: 2, sway: 1 } },
+    b: { text: 'Publicly call it out with facts — integrity wins long-term.', ideology: 'progressive', resources: { cred: 2, gold: 1 } } },
   { id: 'ic_06', question: 'Should immigration be restricted to protect national interests?',
-    a: { text: 'Yes — our people come first. Jobs, security, identity.', ideology: 'supremo', resources: { clout: 3 } },
-    b: { text: 'No — open borders drive innovation and economic growth.', ideology: 'capitalist', resources: { funds: 2, media: 1 } } },
+    a: { text: 'Yes — our people come first. Jobs, security, identity.', ideology: 'nationalist', resources: { sway: 3 } },
+    b: { text: 'No — open borders drive innovation and economic growth.', ideology: 'corporatist', resources: { gold: 2, press: 1 } } },
   { id: 'ic_07', question: 'A major factory is polluting a river. What do you do?',
-    a: { text: 'Fine them but let them operate — jobs matter more.', ideology: 'capitalist', resources: { funds: 3 } },
-    b: { text: 'Shut it down. No compromise on the environment.', ideology: 'idealist', resources: { trust: 2, media: 1 } } },
+    a: { text: 'Fine them but let them operate — jobs matter more.', ideology: 'corporatist', resources: { gold: 3 } },
+    b: { text: 'Shut it down. No compromise on the environment.', ideology: 'progressive', resources: { cred: 2, press: 1 } } },
   { id: 'ic_08', question: 'Should the voting age be lowered to 16?',
-    a: { text: 'Absolutely — youth voices deserve to shape their future.', ideology: 'idealist', resources: { trust: 2, clout: 1 } },
-    b: { text: 'No — maturity and experience should be prerequisites.', ideology: 'supremo', resources: { clout: 2, funds: 1 } } },
+    a: { text: 'Absolutely — youth voices deserve to shape their future.', ideology: 'progressive', resources: { cred: 2, sway: 1 } },
+    b: { text: 'No — maturity and experience should be prerequisites.', ideology: 'nationalist', resources: { sway: 2, gold: 1 } } },
   { id: 'ic_09', question: 'A celebrity endorses your campaign. Do you accept?',
-    a: { text: 'Yes! Reach millions — culture IS politics now.', ideology: 'showstopper', resources: { media: 2, clout: 1 } },
-    b: { text: 'Only if they genuinely believe in your platform.', ideology: 'idealist', resources: { trust: 2, funds: 1 } } },
+    a: { text: 'Yes! Reach millions — culture IS politics now.', ideology: 'populist', resources: { press: 2, sway: 1 } },
+    b: { text: 'Only if they genuinely believe in your platform.', ideology: 'progressive', resources: { cred: 2, gold: 1 } } },
   { id: 'ic_10', question: 'Should healthcare be fully privatized for better efficiency?',
-    a: { text: 'Yes — competition drives quality and innovation.', ideology: 'capitalist', resources: { funds: 2, media: 1 } },
-    b: { text: 'Never — health is a right, not a commodity.', ideology: 'idealist', resources: { trust: 3 } } },
+    a: { text: 'Yes — competition drives quality and innovation.', ideology: 'corporatist', resources: { gold: 2, press: 1 } },
+    b: { text: 'Never — health is a right, not a commodity.', ideology: 'progressive', resources: { cred: 3 } } },
   { id: 'ic_11', question: 'A rival politician makes a major gaffe. How do you respond?',
-    a: { text: 'Turn it into a meme — dominate social media for a week.', ideology: 'showstopper', resources: { media: 3 } },
-    b: { text: "Focus on your policies. Their mistakes aren't your platform.", ideology: 'idealist', resources: { trust: 2, clout: 1 } } },
+    a: { text: 'Turn it into a meme — dominate social press for a week.', ideology: 'populist', resources: { press: 3 } },
+    b: { text: "Focus on your policies. Their mistakes aren't your platform.", ideology: 'progressive', resources: { cred: 2, sway: 1 } } },
   { id: 'ic_12', question: 'Should the state control key industries like energy and telecom?',
-    a: { text: 'Yes — essential services must serve the people, not shareholders.', ideology: 'supremo', resources: { clout: 2, trust: 1 } },
-    b: { text: 'No — private ownership and competition delivers better results.', ideology: 'capitalist', resources: { funds: 3 } } },
-  { id: 'ic_13', question: 'Should social media platforms be regulated by the government?',
-    a: { text: 'Yes — unchecked platforms spread misinformation and hatred.', ideology: 'supremo', resources: { clout: 2, media: 1 } },
-    b: { text: 'No — free speech must be protected at all costs.', ideology: 'capitalist', resources: { funds: 2, trust: 1 } } },
+    a: { text: 'Yes — essential services must serve the people, not shareholders.', ideology: 'nationalist', resources: { sway: 2, cred: 1 } },
+    b: { text: 'No — private ownership and competition delivers better results.', ideology: 'corporatist', resources: { gold: 3 } } },
+  { id: 'ic_13', question: 'Should social press platforms be regulated by the government?',
+    a: { text: 'Yes — unchecked platforms spread misinformation and hatred.', ideology: 'nationalist', resources: { sway: 2, press: 1 } },
+    b: { text: 'No — free speech must be protected at all costs.', ideology: 'corporatist', resources: { gold: 2, cred: 1 } } },
   { id: 'ic_14', question: 'A whistleblower exposes corruption in your party. What do you do?',
-    a: { text: 'Discredit them — the mission is bigger than one person.', ideology: 'supremo', resources: { clout: 3 } },
-    b: { text: 'Thank them publicly — accountability builds lasting trust.', ideology: 'idealist', resources: { trust: 3 } } },
+    a: { text: 'Discredit them — the mission is bigger than one person.', ideology: 'nationalist', resources: { sway: 3 } },
+    b: { text: 'Thank them publicly — accountability builds lasting cred.', ideology: 'progressive', resources: { cred: 3 } } },
   { id: 'ic_15', question: 'Should free education be guaranteed up to university level?',
-    a: { text: 'Yes — an educated population is the greatest national investment.', ideology: 'idealist', resources: { trust: 2, media: 1 } },
-    b: { text: 'No — competition and student loans drive excellence.', ideology: 'capitalist', resources: { funds: 2, clout: 1 } } },
+    a: { text: 'Yes — an educated population is the greatest national investment.', ideology: 'progressive', resources: { cred: 2, press: 1 } },
+    b: { text: 'No — competition and student loans drive excellence.', ideology: 'corporatist', resources: { gold: 2, sway: 1 } } },
   { id: 'ic_16', question: 'Should wealthy individuals pay a higher percentage of tax?',
-    a: { text: 'No — flat tax is fair and investment drives growth.', ideology: 'capitalist', resources: { funds: 3 } },
-    b: { text: 'Yes — wealth inequality threatens social cohesion.', ideology: 'idealist', resources: { trust: 2, media: 1 } } },
+    a: { text: 'No — flat tax is fair and investment drives growth.', ideology: 'corporatist', resources: { gold: 3 } },
+    b: { text: 'Yes — wealth inequality threatens social cohesion.', ideology: 'progressive', resources: { cred: 2, press: 1 } } },
   { id: 'ic_17', question: 'Should the military budget be increased?',
-    a: { text: 'Yes — strong defence is the foundation of national security.', ideology: 'supremo', resources: { clout: 2, funds: 1 } },
-    b: { text: 'No — invest in education and healthcare instead.', ideology: 'idealist', resources: { trust: 3 } } },
+    a: { text: 'Yes — strong defence is the foundation of national security.', ideology: 'nationalist', resources: { sway: 2, gold: 1 } },
+    b: { text: 'No — invest in education and healthcare instead.', ideology: 'progressive', resources: { cred: 3 } } },
   { id: 'ic_18', question: 'A rival goes viral for the wrong reasons. Do you comment?',
-    a: { text: 'Absolutely — pivot it into your biggest media moment.', ideology: 'showstopper', resources: { media: 2, clout: 1 } },
-    b: { text: 'Stay silent — let the story die on its own.', ideology: 'idealist', resources: { trust: 2, funds: 1 } } },
+    a: { text: 'Absolutely — pivot it into your biggest press moment.', ideology: 'populist', resources: { press: 2, sway: 1 } },
+    b: { text: 'Stay silent — let the story die on its own.', ideology: 'progressive', resources: { cred: 2, gold: 1 } } },
   { id: 'ic_19', question: 'Should the government subsidise electric vehicles?',
-    a: { text: 'Yes — green transition needs public investment.', ideology: 'idealist', resources: { trust: 2, media: 1 } },
-    b: { text: 'No — let the market decide the pace of innovation.', ideology: 'capitalist', resources: { funds: 2, clout: 1 } } },
+    a: { text: 'Yes — green transition needs public investment.', ideology: 'progressive', resources: { cred: 2, press: 1 } },
+    b: { text: 'No — let the market decide the pace of innovation.', ideology: 'corporatist', resources: { gold: 2, sway: 1 } } },
   { id: 'ic_20', question: 'Should national holidays celebrate military victories?',
-    a: { text: 'Yes — pride in our history unites the nation.', ideology: 'supremo', resources: { clout: 3 } },
-    b: { text: 'No — holidays should be inclusive and forward-looking.', ideology: 'showstopper', resources: { media: 2, trust: 1 } } },
+    a: { text: 'Yes — pride in our history unites the nation.', ideology: 'nationalist', resources: { sway: 3 } },
+    b: { text: 'No — holidays should be inclusive and forward-looking.', ideology: 'populist', resources: { press: 2, cred: 1 } } },
 ];
 
 // ─── Voter Cards ──────────────────────────────────────────────────────────────
 
 const VOTER_CARDS = [
-  { id: 'vc_01', voterCount: 1, cost: { funds: 1 },                    label: 'Local Businessman' },
-  { id: 'vc_02', voterCount: 1, cost: { trust: 1 },                    label: 'Community Leader' },
-  { id: 'vc_03', voterCount: 1, cost: { clout: 1 },                    label: 'Street Organizer' },
-  { id: 'vc_04', voterCount: 1, cost: { media: 1 },                    label: 'Influencer' },
-  { id: 'vc_05', voterCount: 2, cost: { funds: 1, clout: 1 },          label: 'Trade Union' },
-  { id: 'vc_06', voterCount: 2, cost: { trust: 1, media: 1 },          label: 'Civil Society Group' },
-  { id: 'vc_07', voterCount: 2, cost: { funds: 2 },                    label: 'Corporate Donors' },
-  { id: 'vc_08', voterCount: 2, cost: { clout: 2 },                    label: 'Street Network' },
-  { id: 'vc_09', voterCount: 2, cost: { trust: 2 },                    label: 'Grassroots Movement' },
-  { id: 'vc_10', voterCount: 2, cost: { media: 2 },                    label: 'Media Campaign' },
-  { id: 'vc_11', voterCount: 3, cost: { funds: 2, trust: 1 },          label: 'Business Alliance' },
-  { id: 'vc_12', voterCount: 3, cost: { clout: 2, media: 1 },          label: 'Rally Crowd' },
-  { id: 'vc_13', voterCount: 3, cost: { trust: 2, funds: 1 },          label: 'Voter Drive' },
-  { id: 'vc_14', voterCount: 3, cost: { media: 2, clout: 1 },          label: 'Viral Campaign' },
-  { id: 'vc_15', voterCount: 3, cost: { funds: 1, clout: 1, trust: 1 },label: 'Coalition Bloc' },
-  { id: 'vc_16', voterCount: 1, cost: { funds: 2 },                    label: 'Paid Canvasser' },
-  { id: 'vc_17', voterCount: 1, cost: { clout: 2 },                    label: 'Ward Boss' },
-  { id: 'vc_18', voterCount: 1, cost: { media: 2 },                    label: 'Social Media Star' },
-  { id: 'vc_19', voterCount: 1, cost: { trust: 2 },                    label: 'Local Hero' },
-  { id: 'vc_20', voterCount: 2, cost: { funds: 1, media: 1 },          label: 'PR Firm' },
-  { id: 'vc_21', voterCount: 2, cost: { clout: 1, trust: 1 },          label: 'Neighbourhood Watch' },
-  { id: 'vc_22', voterCount: 2, cost: { funds: 1, trust: 1 },          label: 'Faith Community' },
-  { id: 'vc_23', voterCount: 2, cost: { clout: 1, media: 1 },          label: 'Youth Brigade' },
-  { id: 'vc_24', voterCount: 3, cost: { funds: 2, media: 1 },          label: 'Ad Blitz' },
-  { id: 'vc_25', voterCount: 3, cost: { clout: 1, trust: 1, media: 1 },label: 'People\'s Front' },
-  { id: 'vc_26', voterCount: 4, cost: { funds: 2, clout: 2 },          label: 'Party Machine' },
-  { id: 'vc_27', voterCount: 4, cost: { trust: 2, media: 2 },          label: 'Mass Movement' },
-  { id: 'vc_28', voterCount: 4, cost: { funds: 2, trust: 1, clout: 1 },label: 'Grand Alliance' },
-  { id: 'vc_29', voterCount: 1, cost: { funds: 1, trust: 1 },          label: 'Town Elder' },
-  { id: 'vc_30', voterCount: 2, cost: { funds: 3 },                    label: 'Lobbying Firm' },
+  { id: 'vc_01', voterCount: 1, cost: { gold: 1 },                    label: 'Local Businessman' },
+  { id: 'vc_02', voterCount: 1, cost: { cred: 1 },                    label: 'Community Leader' },
+  { id: 'vc_03', voterCount: 1, cost: { sway: 1 },                    label: 'Street Organizer' },
+  { id: 'vc_04', voterCount: 1, cost: { press: 1 },                    label: 'Influencer' },
+  { id: 'vc_05', voterCount: 2, cost: { gold: 1, sway: 1 },          label: 'Trade Union' },
+  { id: 'vc_06', voterCount: 2, cost: { cred: 1, press: 1 },          label: 'Civil Society Group' },
+  { id: 'vc_07', voterCount: 2, cost: { gold: 2 },                    label: 'Corporate Donors' },
+  { id: 'vc_08', voterCount: 2, cost: { sway: 2 },                    label: 'Street Network' },
+  { id: 'vc_09', voterCount: 2, cost: { cred: 2 },                    label: 'Grassroots Movement' },
+  { id: 'vc_10', voterCount: 2, cost: { press: 2 },                    label: 'press Campaign' },
+  { id: 'vc_11', voterCount: 3, cost: { gold: 2, cred: 1 },          label: 'Business Alliance' },
+  { id: 'vc_12', voterCount: 3, cost: { sway: 2, press: 1 },          label: 'Rally Crowd' },
+  { id: 'vc_13', voterCount: 3, cost: { cred: 2, gold: 1 },          label: 'Voter Drive' },
+  { id: 'vc_14', voterCount: 3, cost: { press: 2, sway: 1 },          label: 'Viral Campaign' },
+  { id: 'vc_15', voterCount: 3, cost: { gold: 1, sway: 1, cred: 1 },label: 'Coalition Bloc' },
+  { id: 'vc_16', voterCount: 1, cost: { gold: 2 },                    label: 'Paid Canvasser' },
+  { id: 'vc_17', voterCount: 1, cost: { sway: 2 },                    label: 'Ward Boss' },
+  { id: 'vc_18', voterCount: 1, cost: { press: 2 },                    label: 'Social press Star' },
+  { id: 'vc_19', voterCount: 1, cost: { cred: 2 },                    label: 'Local Hero' },
+  { id: 'vc_20', voterCount: 2, cost: { gold: 1, press: 1 },          label: 'PR Firm' },
+  { id: 'vc_21', voterCount: 2, cost: { sway: 1, cred: 1 },          label: 'Neighbourhood Watch' },
+  { id: 'vc_22', voterCount: 2, cost: { gold: 1, cred: 1 },          label: 'Faith Community' },
+  { id: 'vc_23', voterCount: 2, cost: { sway: 1, press: 1 },          label: 'Youth Brigade' },
+  { id: 'vc_24', voterCount: 3, cost: { gold: 2, press: 1 },          label: 'Ad Blitz' },
+  { id: 'vc_25', voterCount: 3, cost: { sway: 1, cred: 1, press: 1 },label: 'People\'s Front' },
+  { id: 'vc_26', voterCount: 4, cost: { gold: 2, sway: 2 },          label: 'Party Machine' },
+  { id: 'vc_27', voterCount: 4, cost: { cred: 2, press: 2 },          label: 'Mass Movement' },
+  { id: 'vc_28', voterCount: 4, cost: { gold: 2, cred: 1, sway: 1 },label: 'Grand Alliance' },
+  { id: 'vc_29', voterCount: 1, cost: { gold: 1, cred: 1 },          label: 'Town Elder' },
+  { id: 'vc_30', voterCount: 2, cost: { gold: 3 },                    label: 'Lobbying Firm' },
 ];
 
 // ─── Conspiracy Cards (bought blind — effect revealed on use) ─────────────────
@@ -128,11 +128,11 @@ const VOTER_CARDS = [
 const CONSPIRACY_CARDS = [
   { id: 'cc_01', name: 'Smear Campaign',      desc: 'Remove up to 2 opponent voters from any unlocked zone.',   effect: 'remove_opponent_voter', cost: 4 },
   { id: 'cc_02', name: 'Bloc Mobilization',   desc: 'Place 3 of your voters in any one zone for free.',         effect: 'place_free_voters',     cost: 5 },
-  { id: 'cc_03', name: 'Media Blackout',       desc: 'Opponent loses 3 Media.',                                  effect: 'steal_media',           cost: 4 },
-  { id: 'cc_04', name: 'Financial Scandal',    desc: 'Opponent loses 3 Funds.',                                  effect: 'steal_funds',           cost: 4 },
-  { id: 'cc_05', name: 'Grassroots Drive',     desc: 'Gain 3 Trust immediately.',                                effect: 'gain_trust',            cost: 4 },
-  { id: 'cc_06', name: 'Populist Rally',       desc: 'Gain 3 Clout immediately.',                                effect: 'gain_clout',            cost: 4 },
-  { id: 'cc_07', name: 'Dark Money',           desc: 'Gain 4 Funds immediately.',                                effect: 'gain_funds',            cost: 4 },
+  { id: 'cc_03', name: 'press Blackout',       desc: 'Opponent loses 3 press.',                                  effect: 'steal_press',           cost: 4 },
+  { id: 'cc_04', name: 'Financial Scandal',    desc: 'Opponent loses 3 gold.',                                  effect: 'steal_gold',           cost: 4 },
+  { id: 'cc_05', name: 'Grassroots Drive',     desc: 'Gain 3 cred impresstely.',                                effect: 'gain_cred',            cost: 4 },
+  { id: 'cc_06', name: 'Populist Rally',       desc: 'Gain 3 sway impresstely.',                                effect: 'gain_sway',            cost: 4 },
+  { id: 'cc_07', name: 'Dark Money',           desc: 'Gain 4 gold impresstely.',                                effect: 'gain_gold',            cost: 4 },
   { id: 'cc_08', name: 'Swing Vote',           desc: 'Move any 1 non-majority voter to an adjacent zone.',       effect: 'swing_vote',            cost: 5 },
   { id: 'cc_09', name: 'Opposition Research',  desc: 'Steal 2 resources from opponent\'s richest pool.',         effect: 'steal_resources',       cost: 5 },
 ];
@@ -141,46 +141,46 @@ const CONSPIRACY_CARDS = [
 
 const HEADLINE_CARDS = [
   // Negative (8) — 80%
-  { id: 'hl_01', title: 'Protest Erupts!',         desc: 'Lose 3 Clout — the streets turn against you.',           effect: 'lose_clout',   value: 3,  good: false },
-  { id: 'hl_02', title: 'Funding Scandal',          desc: 'Lose 3 Funds — donors pull out.',                        effect: 'lose_funds',   value: 3,  good: false },
-  { id: 'hl_03', title: 'Media Frenzy',             desc: 'Lose 3 Media — narrative spins out of control.',         effect: 'lose_media',   value: 3,  good: false },
-  { id: 'hl_04', title: 'Trust Crisis',             desc: 'Lose 3 Trust — voters question your integrity.',         effect: 'lose_trust',   value: 3,  good: false },
-  { id: 'hl_05', title: 'Voter Suppressed',         desc: 'The voter who just entered is immediately removed.',      effect: 'remove_voter', value: 1,  good: false },
-  { id: 'hl_06', title: 'Scandal Breaks',           desc: 'Lose 2 Funds and 2 Clout — the press has the story.',   effect: 'lose_funds_clout', value: 2, good: false },
-  { id: 'hl_07', title: 'Voter Backlash',           desc: 'Lose 2 Trust and 1 Media — locals push back hard.',     effect: 'lose_trust_media', value: 2, good: false },
+  { id: 'hl_01', title: 'Protest Erupts!',         desc: 'Lose 3 sway — the streets turn against you.',           effect: 'lose_sway',   value: 3,  good: false },
+  { id: 'hl_02', title: 'Funding Scandal',          desc: 'Lose 3 gold — donors pull out.',                        effect: 'lose_gold',   value: 3,  good: false },
+  { id: 'hl_03', title: 'press Frenzy',             desc: 'Lose 3 press — narrative spins out of control.',         effect: 'lose_press',   value: 3,  good: false },
+  { id: 'hl_04', title: 'cred Crisis',             desc: 'Lose 3 cred — voters question your integrity.',         effect: 'lose_cred',   value: 3,  good: false },
+  { id: 'hl_05', title: 'Voter Suppressed',         desc: 'The voter who just entered is impresstely removed.',      effect: 'remove_voter', value: 1,  good: false },
+  { id: 'hl_06', title: 'Scandal Breaks',           desc: 'Lose 2 gold and 2 sway — the press has the story.',   effect: 'lose_gold_sway', value: 2, good: false },
+  { id: 'hl_07', title: 'Voter Backlash',           desc: 'Lose 2 cred and 1 press — locals push back hard.',     effect: 'lose_cred_press', value: 2, good: false },
   { id: 'hl_08', title: 'Exposed!',                 desc: 'Lose 4 resources from your largest pool.',              effect: 'lose_largest', value: 4,  good: false },
   // Positive (2) — 20%
   { id: 'hl_09', title: 'Sympathy Vote!',           desc: 'Place 1 free voter in this zone — locals back you.',    effect: 'place_voter',  value: 1,  good: true  },
-  { id: 'hl_10', title: 'Underdog Moment!',         desc: 'Gain 2 Trust — the public roots for you.',              effect: 'gain_trust',   value: 2,  good: true  },
+  { id: 'hl_10', title: 'Underdog Moment!',         desc: 'Gain 2 cred — the public roots for you.',              effect: 'gain_cred',   value: 2,  good: true  },
 ];
 
 // ─── Ideology Powers ──────────────────────────────────────────────────────────
 
 const IDEOLOGY_POWERS = {
-  capitalist: [
-    { at: 2, name: 'Passive Income',  desc: '+1 Fund each turn for every 2 Capitalist cards.' },
+  corporatist: [
+    { at: 2, name: 'Passive Income',  desc: '+1 Fund each turn for every 2 corporatist cards.' },
     { at: 3, name: 'Prospecting',     desc: 'Once per turn: trade 1 resource of any type for 2 of another.' },
     { at: 5, name: 'Breaking Ground', desc: 'Once per turn: evict (remove) 3 voters from any zone.' },
   ],
-  supremo: [
-    { at: 2, name: 'Passive Income',  desc: '+1 Clout each turn for every 2 Supremo cards.' },
+  nationalist: [
+    { at: 2, name: 'Passive Income',  desc: '+1 sway each turn for every 2 nationalist cards.' },
     { at: 3, name: 'Donations',       desc: 'Once per turn: snatch (steal) 2 resources from opponent.' },
     { at: 5, name: 'Payback',         desc: 'Once per turn: discard 2 opponent voters from any zone.' },
   ],
-  showstopper: [
-    { at: 2, name: 'Passive Income',  desc: '+1 Media each turn for every 2 Showstopper cards.' },
+  populist: [
+    { at: 2, name: 'Passive Income',  desc: '+1 press each turn for every 2 populist cards.' },
     { at: 3, name: 'Going Viral',     desc: '+1 extra voter placed per voter card used this turn.' },
     { at: 5, name: 'Election Fever',  desc: '+1 extra gerrymander move allowed per zone this turn.' },
   ],
-  idealist: [
-    { at: 2, name: 'Passive Income',  desc: '+1 Trust each turn for every 2 Idealist cards.' },
+  progressive: [
+    { at: 2, name: 'Passive Income',  desc: '+1 cred each turn for every 2 progressive cards.' },
     { at: 3, name: 'Helping Hands',   desc: 'Get 2 discounts (reduce cost by 1) on voter cards this turn.' },
     { at: 5, name: 'Tough Love',      desc: 'Once per turn: convert 2 opponent voters to your side.' },
   ],
 };
 
-const RESOURCE_TYPES = ['funds', 'clout', 'media', 'trust'];
-const RESOURCE_FOR_IDEOLOGY = { capitalist: 'funds', supremo: 'clout', showstopper: 'media', idealist: 'trust' };
+const RESOURCE_TYPES = ['gold', 'sway', 'press', 'cred'];
+const RESOURCE_FOR_IDEOLOGY = { corporatist: 'gold', nationalist: 'sway', populist: 'press', progressive: 'cred' };
 const RESOURCE_CAP = 12;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -228,7 +228,7 @@ function dominantIdeology(player) {
 
 // Passive income: every 2 ideology cards = +1 resource/turn
 // Level 2 power: +1 extra of dominant ideology resource
-// Level 5 idealist: extra +1 Trust
+// Level 5 progressive: extra +1 cred
 function calcPassiveIncome(player) {
   const income = {};
   for (const [ideo, res] of Object.entries(RESOURCE_FOR_IDEOLOGY)) {
@@ -241,9 +241,9 @@ function calcPassiveIncome(player) {
       income[res] = (income[res] || 0) + 1;
     }
   }
-  // Level 5 Idealist: extra +1 Trust
-  if (player.ideologyCards.idealist >= 5) {
-    income.trust = (income.trust || 0) + 1;
+  // Level 5 progressive: extra +1 cred
+  if (player.ideologyCards.progressive >= 5) {
+    income.cred = (income.cred || 0) + 1;
   }
   return income;
 }
@@ -282,7 +282,7 @@ function checkWin(zones) {
 // Apply voter cost reductions from ideology powers
 function getVoterCost(player, baseCost) {
   const cost = { ...baseCost };
-  // Level 3 Idealist: Helping Hands — 2 discounts per turn, only after power is activated
+  // Level 3 progressive: Helping Hands — 2 discounts per turn, only after power is activated
   if (player.helpingHandsActive && (player.helpingHandsUsed || 0) < 2) {
     let discountsLeft = 2 - (player.helpingHandsUsed || 0);
     const sorted = [...RESOURCE_TYPES].sort((a, b) => (cost[b] || 0) - (cost[a] || 0));
@@ -299,8 +299,8 @@ function getVoterCost(player, baseCost) {
 
 // Apply conspiracy cost reduction from ideology powers
 function getConspiracyCost(player, baseCost) {
-  // Level 3 Showstopper: conspiracy cards cost 1 less
-  if (player.ideologyCards.showstopper >= 3) return Math.max(1, baseCost - 1);
+  // Level 3 populist: conspiracy cards cost 1 less
+  if (player.ideologyCards.populist >= 3) return Math.max(1, baseCost - 1);
   return baseCost;
 }
 
@@ -318,8 +318,8 @@ function createInitialState(players) {
     slot:         p.slot,
     userId:       p.userId,
     username:     p.username,
-    funds: 2, clout: 2, media: 2, trust: 2,
-    ideologyCards: { capitalist: 0, supremo: 0, showstopper: 0, idealist: 0 },
+    gold: 2, sway: 2, press: 2, cred: 2,
+    ideologyCards: { corporatist: 0, nationalist: 0, populist: 0, progressive: 0 },
     conspiracies:  [],
     usedPowerThisTurn: false,  // tracks once-per-turn powers
   });
@@ -384,8 +384,8 @@ function answerCard(state, slot, choice) {
 
   clampResources(player);
 
-  // Check Level 5 Showstopper: place 1 free voter after answering
-  const freePegZone = player.ideologyCards.showstopper >= 5
+  // Check Level 5 populist: place 1 free voter after answering
+  const freePegZone = player.ideologyCards.populist >= 5
     ? s.zones.findIndex(z => z.pegs.length < z.capacity && checkMajority(z) === null)
     : -1;
 
@@ -441,14 +441,14 @@ function influenceVoterCard(state, slot, voterCardId, zoneIndex) {
     if (player.helpingHandsUsed >= 2) player.helpingHandsActive = false;
   }
 
-  // Level 3 Showstopper: Going Viral — +1 extra voter per card
-  const extraVoters = player.ideologyCards.showstopper >= 3 ? 1 : 0;
+  // Level 3 populist: Going Viral — +1 extra voter per card
+  const extraVoters = player.ideologyCards.populist >= 3 ? 1 : 0;
   const totalVoters = card.voterCount + extraVoters;
   const actualSpacesLeft = zone.capacity - zone.pegs.length;
   const votersToPlace = Math.min(totalVoters, actualSpacesLeft);
 
-  // Level 5 Showstopper: Election Fever — +1 gerrymander/zone
-  if (player.ideologyCards.showstopper >= 5) {
+  // Level 5 populist: Election Fever — +1 gerrymander/zone
+  if (player.ideologyCards.populist >= 5) {
     s.electionFeverActive = true;
   }
 
@@ -489,13 +489,13 @@ function influenceVoterCard(state, slot, voterCardId, zoneIndex) {
   return ok(_checkGameEnd(s));
 }
 
-// ─── Idealist L3: Helping Hands — 2 discount tokens on voter cards ───────────
+// ─── progressive L3: Helping Hands — 2 discount tokens on voter cards ───────────
 function helpingHands(state, slot) {
   if (state.phase !== 'action')   return err('Not in action phase');
   if (state.currentSlot !== slot) return err('Not your turn');
   const s = JSON.parse(JSON.stringify(state));
   const player = s.players.find(p => p.slot === slot);
-  if (player.ideologyCards.idealist < 3) return err('Need 3 Idealist cards for Helping Hands');
+  if (player.ideologyCards.progressive < 3) return err('Need 3 progressive cards for Helping Hands');
   if (player.usedPowerThisTurn)          return err('Already used a power this turn');
   player.helpingHandsActive = true;  // enables discount in getVoterCost
   player.helpingHandsUsed = 0;       // tracks how many of the 2 discounts used
@@ -517,21 +517,21 @@ function resolveHeadline(state, slot) {
   const player   = s.players.find(p => p.slot === headline.triggerSlot);
 
   switch (headline.effect) {
-    case 'lose_clout':  player.clout  = Math.max(0, player.clout  - headline.value); break;
-    case 'lose_funds':  player.funds  = Math.max(0, player.funds  - headline.value); break;
-    case 'lose_media':  player.media  = Math.max(0, player.media  - headline.value); break;
-    case 'lose_trust':  player.trust  = Math.max(0, player.trust  - headline.value); break;
-    case 'gain_clout':  player.clout  += headline.value; clampResources(player); break;
-    case 'gain_funds':  player.funds  += headline.value; clampResources(player); break;
-    case 'gain_media':  player.media  += headline.value; clampResources(player); break;
-    case 'gain_trust':  player.trust  += headline.value; clampResources(player); break;
-    case 'lose_funds_clout':
-      player.funds = Math.max(0, player.funds - headline.value);
-      player.clout = Math.max(0, player.clout - headline.value);
+    case 'lose_sway':  player.sway  = Math.max(0, player.sway  - headline.value); break;
+    case 'lose_gold':  player.gold  = Math.max(0, player.gold  - headline.value); break;
+    case 'lose_press':  player.press  = Math.max(0, player.press  - headline.value); break;
+    case 'lose_cred':  player.cred  = Math.max(0, player.cred  - headline.value); break;
+    case 'gain_sway':  player.sway  += headline.value; clampResources(player); break;
+    case 'gain_gold':  player.gold  += headline.value; clampResources(player); break;
+    case 'gain_press':  player.press  += headline.value; clampResources(player); break;
+    case 'gain_cred':  player.cred  += headline.value; clampResources(player); break;
+    case 'lose_gold_sway':
+      player.gold = Math.max(0, player.gold - headline.value);
+      player.sway = Math.max(0, player.sway - headline.value);
       break;
-    case 'lose_trust_media':
-      player.trust = Math.max(0, player.trust - headline.value);
-      player.media = Math.max(0, player.media - 1);
+    case 'lose_cred_press':
+      player.cred = Math.max(0, player.cred - headline.value);
+      player.press = Math.max(0, player.press - 1);
       break;
     case 'lose_largest': {
       const richest = [...RESOURCE_TYPES].sort((a, b) => player[b] - player[a])[0];
@@ -545,12 +545,12 @@ function resolveHeadline(state, slot) {
       }
       break;
     }
-    case 'remove_voter_and_clout': {
+    case 'remove_voter_and_sway': {
       const zone = s.zones.find(z => z.name === headline.zoneName);
       if (zone && zone.pegs.includes(headline.triggerSlot)) {
         zone.pegs.splice(zone.pegs.lastIndexOf(headline.triggerSlot), 1);
       }
-      player.clout = Math.max(0, player.clout - 1);
+      player.sway = Math.max(0, player.sway - 1);
       break;
     }
     case 'place_voter': {
@@ -603,9 +603,9 @@ function gerrymander(state, slot, fromZoneIndex, toZoneIndex, pegOwnerSlot, righ
   if (checkMajority(fromZ) === pegOwnerSlot && myPegsInFrom <= fromZ.majority) {
     return err('Cannot gerrymander majority-forming voters');
   }
-  // Level 3 Supremo: opponent cannot remove your majority voters via gerrymander
+  // Level 3 nationalist: opponent cannot remove your majority voters via gerrymander
   if (pegOwnerSlot !== slot && checkMajority(fromZ) === pegOwnerSlot &&
-      s.players.find(p => p.slot === pegOwnerSlot)?.ideologyCards?.supremo >= 3) {
+      s.players.find(p => p.slot === pegOwnerSlot)?.ideologyCards?.nationalist >= 3) {
     return err('Opponent\'s majority voters are protected by Stronghold');
   }
 
@@ -704,8 +704,8 @@ function useConspiracy(state, slot, instanceId, params = {}) {
       const zone = s.zones[zoneIndex];
       if (!zone) return err('No valid target zone');
       if (checkMajority(zone) !== null) return err('Zone is locked');
-      // Level 3 Supremo protects majority voters
-      const isProtected = opp?.ideologyCards?.supremo >= 3 && checkMajority(zone) === oppSlot;
+      // Level 3 nationalist protects majority voters
+      const isProtected = opp?.ideologyCards?.nationalist >= 3 && checkMajority(zone) === oppSlot;
       if (isProtected) return err("Opponent's majority voters are protected by Stronghold");
       let removed = 0;
       while (removed < 2 && zone.pegs.includes(oppSlot)) {
@@ -725,11 +725,11 @@ function useConspiracy(state, slot, instanceId, params = {}) {
         text: `${player.username} used Bloc Mobilization — placed ${canPlace} voters in ${zone.name}` });
       break;
     }
-    case 'steal_media':    opp.media  = Math.max(0, opp.media  - 3); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} launched Media Blackout on ${opp.username}` }); break;
-    case 'steal_funds':    opp.funds  = Math.max(0, opp.funds  - 3); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} triggered Financial Scandal on ${opp.username}` }); break;
-    case 'gain_trust':     player.trust += 3;  clampResources(player); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} ran Grassroots Drive (+3 trust)` }); break;
-    case 'gain_clout':     player.clout += 3;  clampResources(player); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} held Populist Rally (+3 clout)` }); break;
-    case 'gain_funds':     player.funds += 4;  clampResources(player); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} secured Dark Money (+4 funds)` }); break;
+    case 'steal_press':    opp.press  = Math.max(0, opp.press  - 3); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} launched press Blackout on ${opp.username}` }); break;
+    case 'steal_gold':    opp.gold  = Math.max(0, opp.gold  - 3); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} triggered Financial Scandal on ${opp.username}` }); break;
+    case 'gain_cred':     player.cred += 3;  clampResources(player); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} ran Grassroots Drive (+3 cred)` }); break;
+    case 'gain_sway':     player.sway += 3;  clampResources(player); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} held Populist Rally (+3 sway)` }); break;
+    case 'gain_gold':     player.gold += 4;  clampResources(player); s.log.unshift({ turn: s.turn, slot, type: 'conspiracy', text: `${player.username} secured Dark Money (+4 gold)` }); break;
     case 'swing_vote': {
       const { fromZone, toZone, pegOwner } = params;
       if (fromZone === undefined || toZone === undefined || pegOwner === undefined) return err('Needs fromZone, toZone, pegOwner');
@@ -763,7 +763,7 @@ function useConspiracy(state, slot, instanceId, params = {}) {
       break;
     }
     case 'convert_voter': {
-      // Level 5 Supremo power
+      // Level 5 nationalist power
       const zoneIdx = params.zoneIndex ?? s.zones.findIndex(z => gerrymanderRights(z) === slot && z.pegs.includes(oppSlot));
       const zone = s.zones[zoneIdx];
       if (!zone || !zone.pegs.includes(oppSlot)) return err('No opponent voter to convert');
@@ -779,7 +779,7 @@ function useConspiracy(state, slot, instanceId, params = {}) {
   return ok(_checkGameEnd(s));
 }
 
-// ─── Level 3 Idealist Power: convert 1 resource to another ───────────────────
+// ─── Level 3 progressive Power: convert 1 resource to another ───────────────────
 
 function convertResource(state, slot, fromResource, toResource) {
   if (state.phase !== 'action')   return err('Not in action phase');
@@ -788,7 +788,7 @@ function convertResource(state, slot, fromResource, toResource) {
   const s      = JSON.parse(JSON.stringify(state));
   const player = s.players.find(p => p.slot === slot);
 
-  if (player.ideologyCards.idealist < 3) return err('Need 3 Idealist cards for Coalition power');
+  if (player.ideologyCards.progressive < 3) return err('Need 3 progressive cards for Coalition power');
   if (player.usedPowerThisTurn)          return err('Already used a power this turn');
   if (!RESOURCE_TYPES.includes(fromResource) || !RESOURCE_TYPES.includes(toResource)) return err('Invalid resource type');
   if (player[fromResource] < 1)          return err(`Not enough ${fromResource}`);
@@ -806,13 +806,13 @@ function convertResource(state, slot, fromResource, toResource) {
 
 // ─── Ideology Powers ─────────────────────────────────────────────────────────
 
-// Capitalist L3: Prospecting — trade 1 resource for 2 of another
+// corporatist L3: Prospecting — trade 1 resource for 2 of another
 function prospecting(state, slot, fromResource, toResource) {
   if (state.phase !== 'action')   return err('Not in action phase');
   if (state.currentSlot !== slot) return err('Not your turn');
   const s = JSON.parse(JSON.stringify(state));
   const player = s.players.find(p => p.slot === slot);
-  if (player.ideologyCards.capitalist < 3)  return err('Need 3 Capitalist cards for Prospecting');
+  if (player.ideologyCards.corporatist < 3)  return err('Need 3 corporatist cards for Prospecting');
   if (player.usedPowerThisTurn)             return err('Already used a power this turn');
   if (!RESOURCE_TYPES.includes(fromResource) || !RESOURCE_TYPES.includes(toResource)) return err('Invalid resource');
   if (player[fromResource] < 1)             return err(`Not enough ${fromResource}`);
@@ -825,14 +825,14 @@ function prospecting(state, slot, fromResource, toResource) {
   return ok(s);
 }
 
-// Supremo L3: Donations — steal 2 resources from opponent
+// nationalist L3: Donations — steal 2 resources from opponent
 function donations(state, slot) {
   if (state.phase !== 'action')   return err('Not in action phase');
   if (state.currentSlot !== slot) return err('Not your turn');
   const s = JSON.parse(JSON.stringify(state));
   const player = s.players.find(p => p.slot === slot);
   const opp    = s.players.find(p => p.slot !== slot);
-  if (player.ideologyCards.supremo < 3) return err('Need 3 Supremo cards for Donations');
+  if (player.ideologyCards.nationalist < 3) return err('Need 3 nationalist cards for Donations');
   if (player.usedPowerThisTurn)         return err('Already used a power this turn');
   let stolen = 0;
   const sorted = [...RESOURCE_TYPES].sort((a, b) => opp[b] - opp[a]);
@@ -848,14 +848,14 @@ function donations(state, slot) {
   return ok(s);
 }
 
-// Supremo L5: Payback — discard 2 opponent voters from any zone
+// nationalist L5: Payback — discard 2 opponent voters from any zone
 function payback(state, slot, zoneIndex) {
   if (state.phase !== 'action')   return err('Not in action phase');
   if (state.currentSlot !== slot) return err('Not your turn');
   const s = JSON.parse(JSON.stringify(state));
   const player  = s.players.find(p => p.slot === slot);
   const oppSlot = slot === 1 ? 2 : 1;
-  if (player.ideologyCards.supremo < 5) return err('Need 5 Supremo cards for Payback');
+  if (player.ideologyCards.nationalist < 5) return err('Need 5 nationalist cards for Payback');
   if (player.usedPowerThisTurn)         return err('Already used a power this turn');
   const zone = s.zones[zoneIndex];
   if (!zone) return err('Invalid zone');
@@ -870,13 +870,13 @@ function payback(state, slot, zoneIndex) {
   return ok(_checkGameEnd(s));
 }
 
-// Capitalist L5: Breaking Ground — evict 3 voters from any zone
+// corporatist L5: Breaking Ground — evict 3 voters from any zone
 function breakingGround(state, slot, zoneIndex) {
   if (state.phase !== 'action')   return err('Not in action phase');
   if (state.currentSlot !== slot) return err('Not your turn');
   const s = JSON.parse(JSON.stringify(state));
   const player = s.players.find(p => p.slot === slot);
-  if (player.ideologyCards.capitalist < 5) return err('Need 5 Capitalist cards for Breaking Ground');
+  if (player.ideologyCards.corporatist < 5) return err('Need 5 corporatist cards for Breaking Ground');
   if (player.usedPowerThisTurn)            return err('Already used a power this turn');
   const zone = s.zones[zoneIndex];
   if (!zone) return err('Invalid zone');
@@ -888,14 +888,14 @@ function breakingGround(state, slot, zoneIndex) {
   return ok(_checkGameEnd(s));
 }
 
-// Idealist L5: Tough Love — convert 2 opponent voters in zones you lead
+// progressive L5: Tough Love — convert 2 opponent voters in zones you lead
 function toughLove(state, slot, zoneIndex) {
   if (state.phase !== 'action')   return err('Not in action phase');
   if (state.currentSlot !== slot) return err('Not your turn');
   const s = JSON.parse(JSON.stringify(state));
   const player  = s.players.find(p => p.slot === slot);
   const oppSlot = slot === 1 ? 2 : 1;
-  if (player.ideologyCards.idealist < 5) return err('Need 5 Idealist cards for Tough Love');
+  if (player.ideologyCards.progressive < 5) return err('Need 5 progressive cards for Tough Love');
   if (player.usedPowerThisTurn)          return err('Already used a power this turn');
   const zone = s.zones[zoneIndex];
   if (!zone) return err('Invalid zone');
