@@ -575,7 +575,7 @@ function influenceVoterCard(state, slot, voterCardId, zoneIndex) {
   }
 
   s.log.unshift({ turn: s.turn, slot, type: "influence_voter",
-    text: `${player.username} placed ${votersToPlace} voter${votersToPlace > 1 ? 's" : ""} (${card.label}) in ${zone.name}` });
+    text: `${player.username} placed ${votersToPlace} voter${votersToPlace > 1 ? "s" : ""} (${card.label}) in ${zone.name}` });
 
   // Replace used voter card
   s.voterCards = s.voterCards.filter(c => c.id !== voterCardId);
@@ -828,12 +828,12 @@ function useConspiracy(state, slot, instanceId, params = {}) {
         text: `${player.username} used Bloc Mobilization — placed ${canPlace} voters in ${zone.name}` });
       break;
     }
-    case 'steal_kirti":   opp.kirti   = Math.max(0, opp.kirti   - 3); s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} invoked Drona's Silence on ${opp.username}` }); break;
-    case 'steal_suvarna": opp.suvarna = Math.max(0, opp.suvarna - 3); s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} raided ${opp.username}'s treasury` }); break;
+    case "steal_kirti":   opp.kirti   = Math.max(0, opp.kirti   - 3); s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} invoked Drona's Silence on ${opp.username}` }); break;
+    case "steal_suvarna": opp.suvarna = Math.max(0, opp.suvarna - 3); s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} raided ${opp.username}'s treasury` }); break;
     case "gain_satya":    player.satya  += 3; clampResources(player); s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} invoked Krishna's Counsel (+3 Satya)` }); break;
     case "gain_shakti":   player.shakti += 3; clampResources(player); s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} invoked Bhima's Roar (+3 Shakti)` }); break;
     case "gain_suvarna":  player.suvarna += 4; clampResources(player); s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} revealed Hidden Wealth (+4 Suvarna)` }); break;
-    case 'swing_vote": {
+    case "swing_vote": {
       const { fromZone, toZone, pegOwner } = params;
       if (fromZone === undefined || toZone === undefined || pegOwner === undefined) return err("Needs fromZone, toZone, pegOwner");
       const fz = s.zones[fromZone], tz = s.zones[toZone];
@@ -856,7 +856,7 @@ function useConspiracy(state, slot, instanceId, params = {}) {
       }
       break;
     }
-    case 'steal_resources": {
+    case "steal_resources": {
       const richest = [...RESOURCE_TYPES].sort((a, b) => opp[b] - opp[a])[0];
       const stolen = Math.min(2, opp[richest]);
       opp[richest] -= stolen; player[richest] += stolen;
