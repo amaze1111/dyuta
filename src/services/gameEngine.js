@@ -282,8 +282,8 @@ const IDEOLOGY_POWERS = {
   ],
 };
 
-const RESOURCE_TYPES = ['suvarna", "shakti", "kirti", "satya"];
-const RESOURCE_FOR_IDEOLOGY = { artha: 'suvarna", danda: "shakti", sama: "kirti", dharma: "satya" };
+const RESOURCE_TYPES = ["suvarna", "shakti", "kirti", "satya"];
+const RESOURCE_FOR_IDEOLOGY = { artha: "suvarna", danda: "shakti", sama: "kirti", dharma: "satya" };
 const RESOURCE_CAP = 12;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
