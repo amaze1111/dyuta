@@ -198,10 +198,10 @@ const IDEOLOGY_CARDS = [
 const VOTER_CARDS = [
   { id: "vc_01", voterCount: 1, cost: { suvarna: 1 },                         label: "Village Merchant" },
   { id: "vc_02", voterCount: 1, cost: { satya: 1 },                           label: "Gram Pradhan" },
-  { id: "vc_03", voterCount: 1, cost: { shakti: 1 },                          label: 'senapati's Aide" },
+  { id: "vc_03", voterCount: 1, cost: { shakti: 1 },                          label: "senapati's Aide" },
   { id: "vc_04", voterCount: 1, cost: { kirti: 1 },                           label: "Court Poet" },
   { id: "vc_05", voterCount: 2, cost: { suvarna: 1, shakti: 1 },              label: "Vaishya Guild" },
-  { id: "vc_06", voterCount: 2, cost: { satya: 1, kirti: 1 },                 label: 'sabha Council" },
+  { id: "vc_06", voterCount: 2, cost: { satya: 1, kirti: 1 },                 label: "sabha Council" },
   { id: "vc_07", voterCount: 2, cost: { suvarna: 2 },                         label: "Royal Treasury" },
   { id: "vc_08", voterCount: 2, cost: { shakti: 2 },                          label: "Kshatriya Band" },
   { id: "vc_09", voterCount: 2, cost: { satya: 2 },                           label: "Jana Sangha" },
@@ -210,7 +210,7 @@ const VOTER_CARDS = [
   { id: "vc_12", voterCount: 3, cost: { shakti: 2, kirti: 1 },                label: "War Drums" },
   { id: "vc_13", voterCount: 3, cost: { satya: 2, suvarna: 1 },               label: "Pilgrimage March" },
   { id: "vc_14", voterCount: 3, cost: { kirti: 2, shakti: 1 },                label: "Royal Decree" },
-  { id: "vc_15", voterCount: 3, cost: { suvarna: 1, shakti: 1, satya: 1 },   label: 'samiti Bloc" },
+  { id: "vc_15", voterCount: 3, cost: { suvarna: 1, shakti: 1, satya: 1 },   label: "samiti Bloc" },
   { id: "vc_16", voterCount: 1, cost: { suvarna: 2 },                         label: "Hired Scout" },
   { id: "vc_17", voterCount: 1, cost: { shakti: 2 },                          label: "Gram Mukhiya" },
   { id: "vc_18", voterCount: 1, cost: { kirti: 2 },                           label: "Court Dancer" },
@@ -231,21 +231,21 @@ const VOTER_CARDS = [
 // ─── Maya Cards (Shakuni's Arsenal — bought blind) ───────────────────────────
 
 const CONSPIRACY_CARDS = [
-  { id: "cc_01", name: 'shakuni's Dice",    desc: "Remove up to 2 enemy warriors from any unlocked kingdom.", effect: "remove_opponent_voter", cost: 4 },
+  { id: "cc_01", name: "shakuni's Dice",    desc: "Remove up to 2 enemy warriors from any unlocked kingdom.", effect: "remove_opponent_voter", cost: 4 },
   { id: "cc_02", name: "Karna's Army",      desc: "Deploy 3 of your warriors into any one kingdom for free.", effect: "place_free_voters",     cost: 5 },
-  { id: "cc_03", name: "Drona's Silence",   desc: "Opponent loses 3 Kirti.",                                  effect: 'steal_kirti",           cost: 4 },
-  { id: "cc_04", name: "Treasury Raid",      desc: "Opponent loses 3 Suvarna.",                               effect: 'steal_suvarna",         cost: 4 },
+  { id: "cc_03", name: "Drona's Silence",   desc: "Opponent loses 3 Kirti.",                                  effect: "steal_kirti",           cost: 4 },
+  { id: "cc_04", name: "Treasury Raid",      desc: "Opponent loses 3 Suvarna.",                               effect: "steal_suvarna",         cost: 4 },
   { id: "cc_05", name: "Krishna's Counsel", desc: "Gain 3 Satya immediately.",                               effect: "gain_satya",            cost: 4 },
   { id: "cc_06", name: "Bhima's Roar",      desc: "Gain 3 Shakti immediately.",                              effect: "gain_shakti",           cost: 4 },
   { id: "cc_07", name: "Hidden Wealth",      desc: "Gain 4 Suvarna immediately.",                             effect: "gain_suvarna",          cost: 4 },
-  { id: "cc_08", name: "Vidura's Wisdom",   desc: "Move any 1 non-majority warrior to a bordering kingdom.", effect: 'swing_vote",            cost: 5 },
-  { id: "cc_09", name: 'spy Network",        desc: 'steal 2 resources from opponent's richest reserve.",     effect: 'steal_resources",       cost: 5 },
+  { id: "cc_08", name: "Vidura's Wisdom",   desc: "Move any 1 non-majority warrior to a bordering kingdom.", effect: "swing_vote",            cost: 5 },
+  { id: "cc_09", name: "spy Network",        desc: "steal 2 resources from opponent's richest reserve.",     effect: "steal_resources",       cost: 5 },
 ];
 
 // ─── Proclamation Cards (triggered by volatile kingdom entry) ─────────────────
 
 const HEADLINE_CARDS = [
-  { id: "hl_01", title: 'soldiers Desert!",       desc: "Lose 3 Shakti — your warriors lose faith.",            effect: "lose_shakti",       value: 3, good: false },
+  { id: "hl_01", title: "soldiers Desert!",       desc: "Lose 3 Shakti — your warriors lose faith.",            effect: "lose_shakti",       value: 3, good: false },
   { id: "hl_02", title: "Treasury Plundered",     desc: "Lose 3 Suvarna — the royal vault is raided.",          effect: "lose_suvarna",      value: 3, good: false },
   { id: "hl_03", title: "Bards Curse You",        desc: "Lose 3 Kirti — your name is blackened in song.",       effect: "lose_kirti",        value: 3, good: false },
   { id: "hl_04", title: "People's Wrath",        desc: "Lose 3 Satya — the people doubt your dharma.",         effect: "lose_satya",        value: 3, good: false },
@@ -267,7 +267,7 @@ const IDEOLOGY_POWERS = {
   ],
   danda: [
     { at: 2, name: "Passive Income",       desc: "+1 Shakti each turn for every 2 Danda cards." },
-    { at: 3, name: 'shakuni's Gambit",    desc: "Once per turn: seize 2 resources from opponent." },
+    { at: 3, name: "shakuni's Gambit",    desc: "Once per turn: seize 2 resources from opponent." },
     { at: 5, name: "Ashwatthama's Wrath", desc: "Once per turn: discard 2 enemy warriors from any unlocked kingdom." },
   ],
   sama: [
@@ -282,8 +282,8 @@ const IDEOLOGY_POWERS = {
   ],
 };
 
-const RESOURCE_TYPES = ['suvarna", 'shakti", "kirti", 'satya"];
-const RESOURCE_FOR_IDEOLOGY = { artha: 'suvarna", danda: 'shakti", sama: "kirti", dharma: 'satya" };
+const RESOURCE_TYPES = ['suvarna", "shakti", "kirti", "satya"];
+const RESOURCE_FOR_IDEOLOGY = { artha: 'suvarna", danda: "shakti", sama: "kirti", dharma: "satya" };
 const RESOURCE_CAP = 12;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
