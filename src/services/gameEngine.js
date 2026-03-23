@@ -424,7 +424,7 @@ function createInitialState(players) {
     suvarna: 2, shakti: 2, kirti: 2, satya: 2,
     ideologyCards: { artha: 0, danda: 0, sama: 0, dharma: 0 },
     conspiracies:  [],
-    usedPowerThisTurn: false,  // tracks once-per-turn powers
+    usedPowers: {},  // tracks once-per-turn powers per key e.g. { donations: true }
   });
 
   const voterDeck    = shuffle([...VOTER_CARDS]);
@@ -507,7 +507,7 @@ function answerCard(state, slot, choice) {
 
   s.currentCard = null;
   s.phase = "action";
-  player.usedPowerThisTurn = false;
+  player.usedPowers = {};
   s.voterCards = _refreshVoterCards(s);
 
   return ok(s);
@@ -599,10 +599,10 @@ function helpingHands(state, slot) {
   const s = JSON.parse(JSON.stringify(state));
   const player = s.players.find(p => p.slot === slot);
   if (player.ideologyCards.dharma < 3) return err("Need 3 Dharma cards for Draupadi's Grace");
-  if (player.usedPowerThisTurn)          return err("Already used a power this turn");
+  if (player.usedPowers['helping_hands']) return err("Already used this power this turn");
   player.helpingHandsActive = true;  // enables discount in getVoterCost
   player.helpingHandsUsed = 0;       // tracks how many of the 2 discounts used
-  player.usedPowerThisTurn = true;
+  player.usedPowers['helping_hands'] = true;
   s.log.unshift({ turn: s.turn, slot, type: "power",
     text: `${player.username} used Helping Hands — 2 voter card discounts active` });
   return ok(s);
@@ -892,13 +892,13 @@ function convertResource(state, slot, fromResource, toResource) {
   const player = s.players.find(p => p.slot === slot);
 
   if (player.ideologyCards.dharma < 3) return err("Need 3 Dharma cards for Draupadi's Grace");
-  if (player.usedPowerThisTurn)          return err("Already used a power this turn");
+  if (player.usedPowers['convert_resource']) return err("Already used this power this turn");
   if (!RESOURCE_TYPES.includes(fromResource) || !RESOURCE_TYPES.includes(toResource)) return err("Invalid resource type");
   if (player[fromResource] < 1)          return err(`Not enough ${fromResource}`);
 
   player[fromResource]--;
   player[toResource]++;
-  player.usedPowerThisTurn = true;
+  player.usedPowers['convert_resource'] = true;
   clampResources(player);
 
   s.log.unshift({ turn: s.turn, slot, type: "power",
@@ -916,12 +916,12 @@ function prospecting(state, slot, fromResource, toResource) {
   const s = JSON.parse(JSON.stringify(state));
   const player = s.players.find(p => p.slot === slot);
   if (player.ideologyCards.artha < 3)  return err("Need 3 Artha cards for Vaishya's Trade");
-  if (player.usedPowerThisTurn)             return err("Already used a power this turn");
+  if (player.usedPowers['prospecting'])  return err("Already used this power this turn");
   if (!RESOURCE_TYPES.includes(fromResource) || !RESOURCE_TYPES.includes(toResource)) return err("Invalid resource");
   if (player[fromResource] < 1)             return err(`Not enough ${fromResource}`);
   player[fromResource]--;
   player[toResource] += 2;
-  player.usedPowerThisTurn = true;
+  player.usedPowers['prospecting'] = true;
   clampResources(player);
   s.log.unshift({ turn: s.turn, slot, type: "power",
     text: `${player.username} used Prospecting: 1 ${fromResource} → 2 ${toResource}` });
@@ -936,7 +936,7 @@ function donations(state, slot) {
   const player = s.players.find(p => p.slot === slot);
   const opp    = s.players.find(p => p.slot !== slot);
   if (player.ideologyCards.danda < 3) return err("Need 3 Danda cards for Shakuni's Gambit");
-  if (player.usedPowerThisTurn)         return err("Already used a power this turn");
+  if (player.usedPowers['donations'])  return err("Already used this power this turn");
   let stolen = 0;
   const sorted = [...RESOURCE_TYPES].sort((a, b) => opp[b] - opp[a]);
   for (const r of sorted) {
@@ -944,7 +944,7 @@ function donations(state, slot) {
     const take = Math.min(opp[r], 2 - stolen);
     opp[r] -= take; player[r] += take; stolen += take;
   }
-  player.usedPowerThisTurn = true;
+  player.usedPowers['donations'] = true;
   clampResources(player);
   s.log.unshift({ turn: s.turn, slot, type: "power",
     text: `${player.username} used Donations — snatched ${stolen} resources from ${opp.username}` });
@@ -959,7 +959,7 @@ function payback(state, slot, zoneIndex) {
   const player  = s.players.find(p => p.slot === slot);
   const oppSlot = slot === 1 ? 2 : 1;
   if (player.ideologyCards.danda < 5) return err("Need 5 Danda cards for Ashwatthama's Wrath");
-  if (player.usedPowerThisTurn)         return err("Already used a power this turn");
+  if (player.usedPowers['payback'])  return err("Already used this power this turn");
   const zone = s.zones[zoneIndex];
   if (!zone) return err("Invalid zone");
   if (checkMajority(zone) !== null) return err("Cannot target locked zone");
@@ -967,7 +967,7 @@ function payback(state, slot, zoneIndex) {
   while (removed < 2 && zone.pegs.includes(oppSlot)) {
     zone.pegs.splice(zone.pegs.lastIndexOf(oppSlot), 1); removed++;
   }
-  player.usedPowerThisTurn = true;
+  player.usedPowers['payback'] = true;
   s.log.unshift({ turn: s.turn, slot, type: "power",
     text: `${player.username} used Payback — discarded ${removed} voters from ${zone.name}` });
   return ok(_checkGameEnd(s));
@@ -980,12 +980,12 @@ function breakingGround(state, slot, zoneIndex) {
   const s = JSON.parse(JSON.stringify(state));
   const player = s.players.find(p => p.slot === slot);
   if (player.ideologyCards.artha < 5) return err("Need 5 Artha cards for Bhima's Might");
-  if (player.usedPowerThisTurn)            return err("Already used a power this turn");
+  if (player.usedPowers['breaking_ground'])  return err("Already used this power this turn");
   const zone = s.zones[zoneIndex];
   if (!zone) return err("Invalid zone");
   if (checkMajority(zone) !== null) return err("Cannot target locked zone");
   const removed = zone.pegs.splice(Math.max(0, zone.pegs.length - 3));
-  player.usedPowerThisTurn = true;
+  player.usedPowers['breaking_ground'] = true;
   s.log.unshift({ turn: s.turn, slot, type: "power",
     text: `${player.username} used Breaking Ground — evicted ${removed.length} voters from ${zone.name}` });
   return ok(_checkGameEnd(s));
@@ -999,7 +999,7 @@ function toughLove(state, slot, zoneIndex) {
   const player  = s.players.find(p => p.slot === slot);
   const oppSlot = slot === 1 ? 2 : 1;
   if (player.ideologyCards.dharma < 5) return err("Need 5 Dharma cards for Yudhishthira's Dharma");
-  if (player.usedPowerThisTurn)          return err("Already used a power this turn");
+  if (player.usedPowers['tough_love'])  return err("Already used this power this turn");
   const zone = s.zones[zoneIndex];
   if (!zone) return err("Invalid zone");
   if (gerrymanderRights(zone) !== slot)  return err("Must have gerrymandering rights to use Tough Love");
@@ -1009,7 +1009,7 @@ function toughLove(state, slot, zoneIndex) {
     zone.pegs[i] = slot; converted++;
   }
   if (converted === 0) return err("No opponent voters to convert");
-  player.usedPowerThisTurn = true;
+  player.usedPowers['tough_love'] = true;
   s.log.unshift({ turn: s.turn, slot, type: "power",
     text: `${player.username} used Tough Love — converted ${converted} voters in ${zone.name}` });
   return ok(_checkGameEnd(s));
@@ -1060,7 +1060,7 @@ function _advanceTurn(state) {
   // Reset per-turn power flags for the new current player
   const newPlayer = state.players.find(p => p.slot === state.currentSlot);
   if (newPlayer) {
-    newPlayer.usedPowerThisTurn = false;
+    newPlayer.usedPowers = {};
     newPlayer.helpingHandsActive = false;
     newPlayer.helpingHandsUsed = 0;
   }
