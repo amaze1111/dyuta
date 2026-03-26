@@ -6,7 +6,19 @@ const bot       = require('../services/botEngine');
 
 const rooms          = new Map(); // roomCode → Set<WebSocket>
 const activeSessions = new Map(); // roomCode → gameState
-const matchmakingQueue = new Map(); // userId → { ws, user } — players waiting for a match
+const botNames       = new Map(); // roomCode → random bot display name
+const matchmakingQueue = new Map(); // userId → { ws, user, timeoutHandle }
+
+// Random human-sounding bot names (max 12 chars with number)
+const BOT_FIRST = ['Arjun','Vikram','Priya','Rohan','Meera','Karan','Ananya','Dev','Ishaan','Tara','Kabir','Zara','Aditya','Nisha','Raj'];
+const BOT_LAST  = ['S','K','M','R','V','P','A','N'];
+function randomBotName() {
+  const first  = BOT_FIRST[Math.floor(Math.random() * BOT_FIRST.length)];
+  const suffix = BOT_LAST[Math.floor(Math.random() * BOT_LAST.length)];
+  const num    = Math.floor(Math.random() * 999) + 1;
+  const name   = `${first}${suffix}${num}`;
+  return name.slice(0, 12);
+}
 
 function send(ws, event, payload = {}) {
   if (ws.readyState === WebSocket.OPEN) {
@@ -84,7 +96,11 @@ module.exports = function attachWebSocket(server) {
         if (clients) { clients.delete(ws); if (clients.size === 0) rooms.delete(code); }
       }
       // Remove from matchmaking queue if disconnected while waiting
-      if (ws._user) matchmakingQueue.delete(ws._user.userId);
+      if (ws._user) {
+        const entry = matchmakingQueue.get(ws._user.userId);
+        if (entry?.timeoutHandle) clearTimeout(entry.timeoutHandle);
+        matchmakingQueue.delete(ws._user.userId);
+      }
     });
   });
 
@@ -116,58 +132,116 @@ async function handleQueueJoin(ws, user) {
     return send(ws, 'queue:waiting', { position: matchmakingQueue.size });
   }
 
-  // Check if another player is waiting
+  // Check if another real player is waiting
   const waiting = [...matchmakingQueue.values()].find(e => e.ws.readyState === WebSocket.OPEN);
 
   if (waiting) {
-    // Match found — create a room for both players
+    // Real match found — cancel their timeout and create room
+    clearTimeout(waiting.timeoutHandle);
     matchmakingQueue.delete(waiting.user.userId);
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      let code, exists = true;
-      while (exists) {
-        code = generateCode();
-        const { rows } = await client.query("SELECT id FROM rooms WHERE code = $1 AND status != 'finished'", [code]);
-        exists = rows.length > 0;
-      }
-      const { rows: [room] } = await client.query(
-        `INSERT INTO rooms (code, host_id) VALUES ($1, $2) RETURNING *`,
-        [code, waiting.user.userId]
-      );
-      await client.query(
-        `INSERT INTO room_players (room_id, user_id, slot, ideology, is_ready) VALUES ($1, $2, 1, 'none', false)`,
-        [room.id, waiting.user.userId]
-      );
-      await client.query(
-        `INSERT INTO room_players (room_id, user_id, slot, ideology, is_ready) VALUES ($1, $2, 2, 'none', false)`,
-        [room.id, user.userId]
-      );
-      await client.query('COMMIT');
-
-      console.log(`🎯 Matched ${waiting.user.username} vs ${user.username} in room ${code}`);
-
-      // Notify both players
-      send(waiting.ws, 'queue:matched', { roomCode: code });
-      send(ws,         'queue:matched', { roomCode: code });
-    } catch (e) {
-      await client.query('ROLLBACK');
-      console.error('Matchmaking error:', e);
-      send(ws, 'game:error', { message: 'Matchmaking failed. Please try again.' });
-      // Put the waiting player back
-      matchmakingQueue.set(waiting.user.userId, waiting);
-    } finally {
-      client.release();
-    }
+    await createMatchedRoom(waiting.ws, waiting.user, ws, user);
   } else {
-    // No one waiting — add to queue
-    matchmakingQueue.set(user.userId, { ws, user });
+    // No one waiting — add to queue with 30s bot fallback timeout
+    const timeoutHandle = setTimeout(async () => {
+      if (!matchmakingQueue.has(user.userId)) return; // already matched or cancelled
+      matchmakingQueue.delete(user.userId);
+      if (ws.readyState !== WebSocket.OPEN) return;
+      console.log(`⏱ No match found for ${user.username} — falling back to bot`);
+      await createBotFallbackRoom(ws, user);
+    }, 30000);
+
+    matchmakingQueue.set(user.userId, { ws, user, timeoutHandle });
     send(ws, 'queue:waiting', { position: matchmakingQueue.size });
     console.log(`⏳ ${user.username} joined matchmaking queue (${matchmakingQueue.size} waiting)`);
   }
 }
 
+async function createMatchedRoom(ws1, user1, ws2, user2) {
+  const dbClient = await pool.connect();
+  try {
+    await dbClient.query('BEGIN');
+    let code, exists = true;
+    while (exists) {
+      code = generateCode();
+      const { rows } = await dbClient.query("SELECT id FROM rooms WHERE code = $1 AND status != 'finished'", [code]);
+      exists = rows.length > 0;
+    }
+    const { rows: [room] } = await dbClient.query(
+      `INSERT INTO rooms (code, host_id) VALUES ($1, $2) RETURNING *`,
+      [code, user1.userId]
+    );
+    await dbClient.query(
+      `INSERT INTO room_players (room_id, user_id, slot, ideology, is_ready) VALUES ($1, $2, 1, 'none', false)`,
+      [room.id, user1.userId]
+    );
+    await dbClient.query(
+      `INSERT INTO room_players (room_id, user_id, slot, ideology, is_ready) VALUES ($1, $2, 2, 'none', false)`,
+      [room.id, user2.userId]
+    );
+    await dbClient.query('COMMIT');
+    console.log(`🎯 Matched ${user1.username} vs ${user2.username} in room ${code}`);
+    send(ws1, 'queue:matched', { roomCode: code });
+    send(ws2, 'queue:matched', { roomCode: code });
+  } catch (e) {
+    await dbClient.query('ROLLBACK');
+    console.error('Matchmaking error:', e);
+    send(ws2, 'game:error', { message: 'Matchmaking failed. Please try again.' });
+    // Put user1 back in queue
+    const timeoutHandle = setTimeout(async () => {
+      if (!matchmakingQueue.has(user1.userId)) return;
+      matchmakingQueue.delete(user1.userId);
+      if (ws1.readyState === WebSocket.OPEN) await createBotFallbackRoom(ws1, user1);
+    }, 30000);
+    matchmakingQueue.set(user1.userId, { ws: ws1, user: user1, timeoutHandle });
+  } finally {
+    dbClient.release();
+  }
+}
+
+async function createBotFallbackRoom(ws, user) {
+  const botName = randomBotName();
+  const dbClient = await pool.connect();
+  try {
+    await dbClient.query('BEGIN');
+    let code, exists = true;
+    while (exists) {
+      code = generateCode();
+      const { rows } = await dbClient.query("SELECT id FROM rooms WHERE code = $1 AND status != 'finished'", [code]);
+      exists = rows.length > 0;
+    }
+    const { rows: [room] } = await dbClient.query(
+      `INSERT INTO rooms (code, host_id, is_bot) VALUES ($1, $2, TRUE) RETURNING *`,
+      [code, user.userId]
+    );
+    await dbClient.query(
+      `INSERT INTO room_players (room_id, user_id, slot, ideology, is_ready) VALUES ($1, $2, 1, 'none', false)`,
+      [room.id, user.userId]
+    );
+    await dbClient.query(
+      `INSERT INTO room_players (room_id, user_id, slot, ideology, is_ready) VALUES ($1, $2, 2, 'none', true)`,
+      [room.id, '00000000-0000-0000-0000-000000000001']
+    );
+    await dbClient.query('COMMIT');
+
+    // Store bot name so room:state can display it
+    botNames.set(code, botName);
+    markAsBotRoomInternal(code);
+    process.env.BOT_DIFFICULTY = 'medium';
+
+    console.log(`🤖 Bot fallback room ${code} created for ${user.username} (bot: ${botName})`);
+    send(ws, 'queue:matched', { roomCode: code });
+  } catch (e) {
+    await dbClient.query('ROLLBACK');
+    console.error('Bot fallback error:', e);
+    send(ws, 'game:error', { message: 'Could not find a match. Please try again.' });
+  } finally {
+    dbClient.release();
+  }
+}
+
 function handleQueueCancel(ws, user) {
+  const entry = matchmakingQueue.get(user.userId);
+  if (entry?.timeoutHandle) clearTimeout(entry.timeoutHandle);
   matchmakingQueue.delete(user.userId);
   send(ws, 'queue:cancelled', {});
   console.log(`❌ ${user.username} left matchmaking queue`);
@@ -249,13 +323,14 @@ async function handleRoomJoin(ws, user, { roomCode }) {
     }
 
     const botRoom = room.is_bot === true;
+    const botDisplayName = botNames.get(code) || randomBotName();
     // Send room:state to each player individually so we can include their mySlot
     const wsSet = rooms.get(code) || new Set();
     const roomPayload = {
       room: { id: room.id, code: room.code, status: room.status },
       players: players.map(p => ({
         slot: p.slot,
-        username: p.slot === 2 && botRoom ? '🤖 Bot' : p.username,
+        username: p.slot === 2 && botRoom ? botDisplayName : p.username,
         isReady: p.is_ready
       })),
       isBotRoom: botRoom,
@@ -291,13 +366,14 @@ async function handleReady(ws, user, { roomCode }) {
     );
 
     const botRoom = room.is_bot === true;
+    const botDisplayName2 = botNames.get(code) || randomBotName();
     // Send room:state to each player individually so we can include their mySlot
     const wsSet = rooms.get(code) || new Set();
     const roomPayload = {
       room: { id: room.id, code: room.code, status: room.status },
       players: players.map(p => ({
         slot: p.slot,
-        username: p.slot === 2 && botRoom ? '🤖 Bot' : p.username,
+        username: p.slot === 2 && botRoom ? botDisplayName2 : p.username,
         isReady: p.is_ready
       })),
       isBotRoom: botRoom,
@@ -488,7 +564,13 @@ async function handleGameOver(code, state, gameId) {
   activeSessions.delete(code);
 }
 
-// Keep for backwards compatibility
+// Keep for backwards compatibility (called from rooms.js HTTP route)
 module.exports.markAsBotRoom = function(code) {
   // No-op — bot status now stored in DB
 };
+
+// Internal version used by bot fallback matchmaking
+function markAsBotRoomInternal(code) {
+  // Bot status is stored in DB (is_bot = true) — this is a no-op placeholder
+  // The is_bot flag in DB is what controls bot behaviour in handleReady
+}
