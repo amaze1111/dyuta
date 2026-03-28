@@ -13,6 +13,38 @@ function signToken(user) {
   );
 }
 
+function sanitizeUser(row) {
+  if (!row) return row;
+  const { password: _password, ...safeUser } = row;
+  return {
+    ...safeUser,
+    wins: Number(safeUser.wins ?? 0),
+    losses: Number(safeUser.losses ?? 0),
+  };
+}
+
+async function insertUserWithFallback({ username, email, hash }) {
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO users (username, email, password, avatar_seed)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [username, email, hash, username]
+    );
+    return rows[0];
+  } catch (e) {
+    // Older production schemas may not yet have avatar_seed.
+    if (e.code !== '42703') throw e;
+    const { rows } = await pool.query(
+      `INSERT INTO users (username, email, password)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [username, email, hash]
+    );
+    return rows[0];
+  }
+}
+
 // POST /auth/register
 router.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
@@ -29,14 +61,12 @@ router.post('/register', async (req, res) => {
 
   try {
     const hash = await bcrypt.hash(password, 12);
-    const { rows } = await pool.query(
-      `INSERT INTO users (username, email, password, avatar_seed)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, username, email, wins, losses, created_at`,
-      [username.trim(), email.toLowerCase().trim(), hash, username]
-    );
-    const user = rows[0];
-    res.status(201).json({ user, token: signToken(user) });
+    const user = await insertUserWithFallback({
+      username: username.trim(),
+      email: email.toLowerCase().trim(),
+      hash,
+    });
+    res.status(201).json({ user: sanitizeUser(user), token: signToken(user) });
   } catch (e) {
     if (e.code === '23505') { // unique violation
       const field = e.constraint?.includes('email') ? 'email' : 'username';
@@ -64,8 +94,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const { password: _, ...safeUser } = user;
-    res.json({ user: safeUser, token: signToken(user) });
+    res.json({ user: sanitizeUser(user), token: signToken(user) });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Login failed' });
