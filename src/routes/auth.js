@@ -24,6 +24,19 @@ function sanitizeUser(row) {
   };
 }
 
+function withDebug(req, payload, error) {
+  if (req.get('x-debug-auth') !== '1') return payload;
+  return {
+    ...payload,
+    debug: {
+      code: error?.code ?? null,
+      detail: error?.detail ?? null,
+      constraint: error?.constraint ?? null,
+      message: error?.message ?? null,
+    },
+  };
+}
+
 async function insertUserWithFallback({ username, email, hash }) {
   const userId = uuidv4();
   try {
@@ -75,7 +88,7 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ error: `That ${field} is already taken` });
     }
     console.error(e);
-    res.status(500).json({ error: 'Registration failed' });
+    res.status(500).json(withDebug(req, { error: 'Registration failed' }, e));
   }
 });
 
@@ -99,7 +112,7 @@ router.post('/login', async (req, res) => {
     res.json({ user: sanitizeUser(user), token: signToken(user) });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'Login failed' });
+    res.status(500).json(withDebug(req, { error: 'Login failed' }, e));
   }
 });
 
