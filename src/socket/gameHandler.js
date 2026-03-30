@@ -61,7 +61,7 @@ module.exports = function attachWebSocket(server) {
         case 'queue:join':            await handleQueueJoin(ws, user); break;
         case 'queue:cancel':          handleQueueCancel(ws, user); break;
         case 'game:answer_card':      await handleMutate(ws, payload.roomCode, s => engine.answerCard(s, ws._slot, payload.choice)); break;
-        case 'game:influence_Soldier':  await handleMutate(ws, payload.roomCode, s => engine.influenceSoldierCard(s, ws._slot, payload.SoldierCardId, payload.zoneIndex)); break;
+        case 'game:influence_voter':  await handleMutate(ws, payload.roomCode, s => engine.influencevoterCard(s, ws._slot, payload.voterCardId, payload.zoneIndex)); break;
         case 'game:gerrymander':      await handleMutate(ws, payload.roomCode, s => engine.gerrymander(s, ws._slot, payload.fromZoneIndex, payload.toZoneIndex, payload.pegOwnerSlot, payload.rightsZoneIndex)); break;
         case 'game:buy_conspiracy':   await handleMutate(ws, payload.roomCode, s => engine.buyConspiracy(s, ws._slot, payload.payment || null)); break;
         case 'game:use_conspiracy':   await handleMutate(ws, payload.roomCode, s => engine.useConspiracy(s, ws._slot, payload.instanceId, payload.params || {})); break;
