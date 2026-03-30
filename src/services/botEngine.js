@@ -87,7 +87,7 @@ function chooseBotAction(state, botSlot) {
   const opponent = state.players.find(p => p.slot !== botSlot);
   if (!bot) return null;
 
-  const affordableSoldierCards = state.SoldierCards.filter(c => canBotAfford(bot, c.cost));
+  const affordablevoterCards = state.voterCards.filter(c => canBotAfford(bot, c.cost));
   const canBuyConspiracy = bot.totalResources >= 4 || 
     Object.values(bot).filter(v => typeof v === 'number').some(() => false); // recalc below
 
@@ -96,17 +96,17 @@ function chooseBotAction(state, botSlot) {
   const hasConspiracies = bot.conspiracies && bot.conspiracies.length > 0;
 
   if (DIFFICULTY === 'easy') {
-    return chooseEasyAction(state, botSlot, affordableSoldierCards, canBuyAnyConspiracy, hasConspiracies);
+    return chooseEasyAction(state, botSlot, affordablevoterCards, canBuyAnyConspiracy, hasConspiracies);
   } else if (DIFFICULTY === 'medium') {
-    return chooseMediumAction(state, botSlot, bot, opponent, affordableSoldierCards, canBuyAnyConspiracy, hasConspiracies);
+    return chooseMediumAction(state, botSlot, bot, opponent, affordablevoterCards, canBuyAnyConspiracy, hasConspiracies);
   } else {
-    return chooseHardAction(state, botSlot, bot, opponent, affordableSoldierCards, canBuyAnyConspiracy, hasConspiracies);
+    return chooseHardAction(state, botSlot, bot, opponent, affordablevoterCards, canBuyAnyConspiracy, hasConspiracies);
   }
 }
 
 function chooseEasyAction(state, botSlot, affordableCards, canBuyConspiracy, hasConspiracies) {
   const options = [];
-  if (affordableCards.length > 0) options.push('influence_Soldier');
+  if (affordableCards.length > 0) options.push('influence_voter');
   if (canBuyConspiracy) options.push('buy_conspiracy');
   if (hasConspiracies && Math.random() < 0.3) options.push('use_conspiracy');
   options.push(null); // end turn
@@ -114,21 +114,21 @@ function chooseEasyAction(state, botSlot, affordableCards, canBuyConspiracy, has
 }
 
 function chooseMediumAction(state, botSlot, bot, opponent, affordableCards, canBuyConspiracy, hasConspiracies) {
-  // Priority: influence Soldiers > use conspiracy if helpful > buy conspiracy > gerrymander > end turn
+  // Priority: influence voters > use conspiracy if helpful > buy conspiracy > gerrymander > end turn
 
-  // If we have a Soldier card that can lock a zone, do it immediately
+  // If we have a voter card that can lock a zone, do it immediately
   const urgentCard = findZoneLockingCard(state, botSlot, affordableCards);
-  if (urgentCard) return { type: 'influence_Soldier', card: urgentCard };
+  if (urgentCard) return { type: 'influence_voter', card: urgentCard };
 
   // Use conspiracy if we have one and it's useful
   if (hasConspiracies && bot.conspiracies.length > 0) {
     return { type: 'use_conspiracy', card: bot.conspiracies[0] };
   }
 
-  // Place Soldiers in best zone
+  // Place voters in best zone
   if (affordableCards.length > 0) {
-    const bestCard = chooseBestSoldierCard(state, botSlot, affordableCards);
-    if (bestCard) return { type: 'influence_Soldier', card: bestCard };
+    const bestCard = chooseBestvoterCard(state, botSlot, affordableCards);
+    if (bestCard) return { type: 'influence_voter', card: bestCard };
   }
 
   // Buy conspiracy if we have enough resources and nothing else to do
@@ -152,7 +152,7 @@ function chooseHardAction(state, botSlot, bot, opponent, affordableCards, canBuy
 
   // Lock a zone we're leading in
   const lockCard = findZoneLockingCard(state, botSlot, affordableCards);
-  if (lockCard) return { type: 'influence_Soldier', card: lockCard };
+  if (lockCard) return { type: 'influence_voter', card: lockCard };
 
   // Use conspiracy strategically
   if (hasConspiracies) {
@@ -160,10 +160,10 @@ function chooseHardAction(state, botSlot, bot, opponent, affordableCards, canBuy
     if (bestConspiracy) return { type: 'use_conspiracy', card: bestConspiracy };
   }
 
-  // Place Soldiers in highest-value zone we can win
+  // Place voters in highest-value zone we can win
   if (affordableCards.length > 0) {
-    const bestCard = chooseBestSoldierCard(state, botSlot, affordableCards);
-    if (bestCard) return { type: 'influence_Soldier', card: bestCard };
+    const bestCard = chooseBestvoterCard(state, botSlot, affordableCards);
+    if (bestCard) return { type: 'influence_voter', card: bestCard };
   }
 
   // Gerrymander to disrupt opponent
@@ -180,11 +180,11 @@ function chooseHardAction(state, botSlot, bot, opponent, affordableCards, canBuy
 function executeBotAction(state, botSlot, action) {
   if (!action) return { ok: false };
 
-  if (action.type === 'influence_Soldier') {
+  if (action.type === 'influence_voter') {
     const card = action.card;
-    const zoneIndex = chooseBestZone(state, botSlot, card.SoldierCount);
+    const zoneIndex = chooseBestZone(state, botSlot, card.voterCount);
     if (zoneIndex === -1) return { ok: false, error: 'No valid zone' };
-    return engine.influenceSoldierCard(state, botSlot, card.id, zoneIndex);
+    return engine.influencevoterCard(state, botSlot, card.id, zoneIndex);
   }
 
   if (action.type === 'gerrymander') {
@@ -235,33 +235,33 @@ function zoneScore(zone, botSlot) {
   return zone.points * (1 + proximityToMajority) + leadBonus;
 }
 
-function chooseBestZone(state, botSlot, SoldierCount) {
+function chooseBestZone(state, botSlot, voterCount) {
   let best = -1, bestScore = -Infinity;
   state.zones.forEach((zone, index) => {
     if (engine.checkMajority(zone) !== null) return;
-    if (zone.capacity - zone.pegs.length < SoldierCount) return;
+    if (zone.capacity - zone.pegs.length < voterCount) return;
     const score = zoneScore(zone, botSlot);
     if (score > bestScore) { bestScore = score; best = index; }
   });
   return best;
 }
 
-function chooseBestSoldierCard(state, botSlot, affordableCards) {
-  // Pick the card that gives the most Soldiers going to our best zone
+function chooseBestvoterCard(state, botSlot, affordableCards) {
+  // Pick the card that gives the most voters going to our best zone
   return affordableCards.reduce((best, card) => {
     if (!best) return card;
-    return card.SoldierCount > best.SoldierCount ? card : best;
+    return card.voterCount > best.voterCount ? card : best;
   }, null);
 }
 
 function findZoneLockingCard(state, botSlot, affordableCards) {
-  // Find a Soldier card that would complete a majority in a zone we're leading
+  // Find a voter card that would complete a majority in a zone we're leading
   for (const card of affordableCards) {
     for (const zone of state.zones) {
       if (engine.checkMajority(zone) !== null) continue;
       const myPegs = zone.pegs.filter(p => p === botSlot).length;
       const spacesLeft = zone.capacity - zone.pegs.length;
-      if (spacesLeft >= card.SoldierCount && myPegs + card.SoldierCount >= zone.majority) {
+      if (spacesLeft >= card.voterCount && myPegs + card.voterCount >= zone.majority) {
         return card;
       }
     }
@@ -279,9 +279,9 @@ function findBlockingMove(state, botSlot, affordableCards) {
     const oppNeedsMore = zone.majority - oppPegs;
 
     if (oppNeedsMore <= 2 && spacesLeft > 0) {
-      // Opponent is close — place our Soldiers here
-      const card = affordableCards.find(c => c.SoldierCount <= spacesLeft);
-      if (card) return { type: 'influence_Soldier', card, zoneIndex };
+      // Opponent is close — place our voters here
+      const card = affordableCards.find(c => c.voterCount <= spacesLeft);
+      if (card) return { type: 'influence_voter', card, zoneIndex };
     }
   }
   return null;
@@ -311,7 +311,7 @@ function chooseBestConspiracy(state, botSlot) {
   const bot = state.players.find(p => p.slot === botSlot);
   if (!bot?.conspiracies?.length) return null;
   // Prefer attack cards over resource gain
-  const priority = ['remove_opponent_Soldier', 'steal_funds', 'steal_media', 'place_free_Soldiers', 'gain_funds', 'gain_clout'];
+  const priority = ['remove_opponent_voter', 'steal_funds', 'steal_media', 'place_free_voters', 'gain_funds', 'gain_clout'];
   for (const effect of priority) {
     const card = bot.conspiracies.find(c => c.effect === effect);
     if (card) return card;
@@ -323,7 +323,7 @@ function buildConspiracyParams(state, botSlot, card) {
   const oppSlot = botSlot === 1 ? 2 : 1;
   const params = {};
 
-  if (card.effect === 'remove_opponent_Soldier') {
+  if (card.effect === 'remove_opponent_voter') {
     // Target zone where opponent has most pegs but no majority
     const target = state.zones
       .map((z, i) => ({ z, i }))
@@ -332,7 +332,7 @@ function buildConspiracyParams(state, botSlot, card) {
     if (target) params.zoneIndex = target.i;
   }
 
-  if (card.effect === 'place_free_Soldiers') {
+  if (card.effect === 'place_free_voters') {
     const best = chooseBestZone(state, botSlot, 3);
     if (best !== -1) params.zoneIndex = best;
   }
