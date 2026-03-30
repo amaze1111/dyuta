@@ -2,10 +2,10 @@
  * SHASN Game Engine — full rules implementation
  *
  * Fixes in this version:
- *  - Headline cards: triggered when voter enters volatile zone
+ *  - Headline cards: triggered when Soldier enters volatile zone
  *  - Conspiracy cards: bought blind (random from deck), revealed on use
  *  - Level 3 + Level 5 ideology powers fully active
- *  - voter card flow simplified (no double-selection)
+ *  - Soldier card flow simplified (no double-selection)
  *  - Passive income correctly calculated per turn start
  */
 
@@ -188,51 +188,51 @@ const IDEOLOGY_CARDS = [
   { id: "ic_54", question: "A rival has spread falsehoods about you across all seven kingdoms. How do you respond?",
     a: { text: "Counter with a grand proclamation of truth — let your deeds drown the lies.", ideology: "sama", resources: { kirti: 3 } },
     b: { text: "Find the source and silence it — lies left standing grow roots.", ideology: "danda", resources: { shakti: 2, Swarna: 1 } } },
-  { id: "ic_55", question: "The great war is over. A young voter weeps for the fallen enemies. Do you comfort him?",
+  { id: "ic_55", question: "The great war is over. A young Soldier weeps for the fallen enemies. Do you comfort him?",
     a: { text: "Yes — a king who mourns all lives is a king worth following.", ideology: "dharma", resources: { satya: 2, kirti: 1 } },
     b: { text: "No — sentiment on the battlefield weakens resolve.", ideology: "danda", resources: { shakti: 3 } } },
 ];
 
 // ─── Ally Cards (Warriors & Factions) ────────────────────────────────────────
 
-const voter_CARDS = [
-  { id: "vc_01", voterCount: 1, cost: { Swarna: 1 },                         label: "Village Merchant" },
-  { id: "vc_02", voterCount: 1, cost: { satya: 1 },                           label: "Gram Pradhan" },
-  { id: "vc_03", voterCount: 1, cost: { shakti: 1 },                          label: "senapati's Aide" },
-  { id: "vc_04", voterCount: 1, cost: { kirti: 1 },                           label: "Court Poet" },
-  { id: "vc_05", voterCount: 2, cost: { Swarna: 1, shakti: 1 },              label: "Vaishya Guild" },
-  { id: "vc_06", voterCount: 2, cost: { satya: 1, kirti: 1 },                 label: "sabha Council" },
-  { id: "vc_07", voterCount: 2, cost: { Swarna: 2 },                         label: "Royal Treasury" },
-  { id: "vc_08", voterCount: 2, cost: { shakti: 2 },                          label: "Kshatriya Band" },
-  { id: "vc_09", voterCount: 2, cost: { satya: 2 },                           label: "Jana Sangha" },
-  { id: "vc_10", voterCount: 2, cost: { kirti: 2 },                           label: "Bard's Tale" },
-  { id: "vc_11", voterCount: 3, cost: { Swarna: 2, satya: 1 },               label: "Merchant Alliance" },
-  { id: "vc_12", voterCount: 3, cost: { shakti: 2, kirti: 1 },                label: "War Drums" },
-  { id: "vc_13", voterCount: 3, cost: { satya: 2, Swarna: 1 },               label: "Pilgrimage March" },
-  { id: "vc_14", voterCount: 3, cost: { kirti: 2, shakti: 1 },                label: "Royal Decree" },
-  { id: "vc_15", voterCount: 3, cost: { Swarna: 1, shakti: 1, satya: 1 },   label: "samiti Bloc" },
-  { id: "vc_16", voterCount: 1, cost: { Swarna: 2 },                         label: "Hired Scout" },
-  { id: "vc_17", voterCount: 1, cost: { shakti: 2 },                          label: "Gram Mukhiya" },
-  { id: "vc_18", voterCount: 1, cost: { kirti: 2 },                           label: "Court Dancer" },
-  { id: "vc_19", voterCount: 1, cost: { satya: 2 },                           label: "Village Hero" },
-  { id: "vc_20", voterCount: 2, cost: { Swarna: 1, kirti: 1 },               label: "Royal Herald" },
-  { id: "vc_21", voterCount: 2, cost: { shakti: 1, satya: 1 },                label: "Border Guards" },
-  { id: "vc_22", voterCount: 2, cost: { Swarna: 1, satya: 1 },               label: "Ashram Followers" },
-  { id: "vc_23", voterCount: 2, cost: { shakti: 1, kirti: 1 },                label: "Young Warriors" },
-  { id: "vc_24", voterCount: 3, cost: { Swarna: 2, kirti: 1 },               label: "Proclamation Blitz" },
-  { id: "vc_25", voterCount: 3, cost: { shakti: 1, satya: 1, kirti: 1 },     label: "Praja Morcha" },
-  { id: "vc_26", voterCount: 4, cost: { Swarna: 2, shakti: 2 },              label: "Rajya Yantra" },
-  { id: "vc_27", voterCount: 4, cost: { satya: 2, kirti: 2 },                 label: "Lok Andolan" },
-  { id: "vc_28", voterCount: 4, cost: { Swarna: 2, satya: 1, shakti: 1 },   label: "Maha Sandhi" },
-  { id: "vc_29", voterCount: 1, cost: { Swarna: 1, satya: 1 },               label: "Village Pandit" },
-  { id: "vc_30", voterCount: 2, cost: { Swarna: 3 },                         label: "Raj Darbari" },
+const Soldier_CARDS = [
+  { id: "vc_01", SoldierCount: 1, cost: { Swarna: 1 },                         label: "Village Merchant" },
+  { id: "vc_02", SoldierCount: 1, cost: { satya: 1 },                           label: "Gram Pradhan" },
+  { id: "vc_03", SoldierCount: 1, cost: { shakti: 1 },                          label: "senapati's Aide" },
+  { id: "vc_04", SoldierCount: 1, cost: { kirti: 1 },                           label: "Court Poet" },
+  { id: "vc_05", SoldierCount: 2, cost: { Swarna: 1, shakti: 1 },              label: "Vaishya Guild" },
+  { id: "vc_06", SoldierCount: 2, cost: { satya: 1, kirti: 1 },                 label: "sabha Council" },
+  { id: "vc_07", SoldierCount: 2, cost: { Swarna: 2 },                         label: "Royal Treasury" },
+  { id: "vc_08", SoldierCount: 2, cost: { shakti: 2 },                          label: "Kshatriya Band" },
+  { id: "vc_09", SoldierCount: 2, cost: { satya: 2 },                           label: "Jana Sangha" },
+  { id: "vc_10", SoldierCount: 2, cost: { kirti: 2 },                           label: "Bard's Tale" },
+  { id: "vc_11", SoldierCount: 3, cost: { Swarna: 2, satya: 1 },               label: "Merchant Alliance" },
+  { id: "vc_12", SoldierCount: 3, cost: { shakti: 2, kirti: 1 },                label: "War Drums" },
+  { id: "vc_13", SoldierCount: 3, cost: { satya: 2, Swarna: 1 },               label: "Pilgrimage March" },
+  { id: "vc_14", SoldierCount: 3, cost: { kirti: 2, shakti: 1 },                label: "Royal Decree" },
+  { id: "vc_15", SoldierCount: 3, cost: { Swarna: 1, shakti: 1, satya: 1 },   label: "samiti Bloc" },
+  { id: "vc_16", SoldierCount: 1, cost: { Swarna: 2 },                         label: "Hired Scout" },
+  { id: "vc_17", SoldierCount: 1, cost: { shakti: 2 },                          label: "Gram Mukhiya" },
+  { id: "vc_18", SoldierCount: 1, cost: { kirti: 2 },                           label: "Court Dancer" },
+  { id: "vc_19", SoldierCount: 1, cost: { satya: 2 },                           label: "Village Hero" },
+  { id: "vc_20", SoldierCount: 2, cost: { Swarna: 1, kirti: 1 },               label: "Royal Herald" },
+  { id: "vc_21", SoldierCount: 2, cost: { shakti: 1, satya: 1 },                label: "Border Guards" },
+  { id: "vc_22", SoldierCount: 2, cost: { Swarna: 1, satya: 1 },               label: "Ashram Followers" },
+  { id: "vc_23", SoldierCount: 2, cost: { shakti: 1, kirti: 1 },                label: "Young Warriors" },
+  { id: "vc_24", SoldierCount: 3, cost: { Swarna: 2, kirti: 1 },               label: "Proclamation Blitz" },
+  { id: "vc_25", SoldierCount: 3, cost: { shakti: 1, satya: 1, kirti: 1 },     label: "Praja Morcha" },
+  { id: "vc_26", SoldierCount: 4, cost: { Swarna: 2, shakti: 2 },              label: "Rajya Yantra" },
+  { id: "vc_27", SoldierCount: 4, cost: { satya: 2, kirti: 2 },                 label: "Lok Andolan" },
+  { id: "vc_28", SoldierCount: 4, cost: { Swarna: 2, satya: 1, shakti: 1 },   label: "Maha Sandhi" },
+  { id: "vc_29", SoldierCount: 1, cost: { Swarna: 1, satya: 1 },               label: "Village Pandit" },
+  { id: "vc_30", SoldierCount: 2, cost: { Swarna: 3 },                         label: "Raj Darbari" },
 ];
 
 // ─── Maya Cards (Shakuni's Arsenal — bought blind) ───────────────────────────
 
 const CONSPIRACY_CARDS = [
-  { id: "cc_01", name: "shakuni's Dice",    desc: "Remove up to 2 enemy warriors from any unlocked kingdom.", effect: "remove_opponent_voter", cost: 4 },
-  { id: "cc_02", name: "Karna's Army",      desc: "Deploy 3 of your warriors into any one kingdom for free.", effect: "place_free_voters",     cost: 5 },
+  { id: "cc_01", name: "shakuni's Dice",    desc: "Remove up to 2 enemy warriors from any unlocked kingdom.", effect: "remove_opponent_Soldier", cost: 4 },
+  { id: "cc_02", name: "Karna's Army",      desc: "Deploy 3 of your warriors into any one kingdom for free.", effect: "place_free_Soldiers",     cost: 5 },
   { id: "cc_03", name: "Drona's Silence",   desc: "Opponent loses 3 Kirti.",                                  effect: "steal_kirti",           cost: 4 },
   { id: "cc_04", name: "Treasury Raid",      desc: "Opponent loses 3 Swarna.",                               effect: "steal_Swarna",         cost: 4 },
   { id: "cc_05", name: "Krishna's Counsel", desc: "Gain 3 Satya immediately.",                               effect: "gain_satya",            cost: 4 },
@@ -245,15 +245,15 @@ const CONSPIRACY_CARDS = [
 // ─── Proclamation Cards (triggered by volatile kingdom entry) ─────────────────
 
 const HEADLINE_CARDS = [
-  { id: "hl_01", title: "voters Desert!",       desc: "Lose 3 Shakti — your warriors lose faith.",            effect: "lose_shakti",       value: 3, good: false },
+  { id: "hl_01", title: "Soldiers Desert!",       desc: "Lose 3 Shakti — your warriors lose faith.",            effect: "lose_shakti",       value: 3, good: false },
   { id: "hl_02", title: "Treasury Plundered",     desc: "Lose 3 Swarna — the royal vault is raided.",          effect: "lose_Swarna",      value: 3, good: false },
   { id: "hl_03", title: "Bards Curse You",        desc: "Lose 3 Kirti — your name is blackened in song.",       effect: "lose_kirti",        value: 3, good: false },
   { id: "hl_04", title: "People's Wrath",        desc: "Lose 3 Satya — the people doubt your dharma.",         effect: "lose_satya",        value: 3, good: false },
-  { id: "hl_05", title: "Warrior Expelled",       desc: "The warrior who just entered is immediately removed.",  effect: "remove_voter",      value: 1, good: false },
+  { id: "hl_05", title: "Warrior Expelled",       desc: "The warrior who just entered is immediately removed.",  effect: "remove_Soldier",      value: 1, good: false },
   { id: "hl_06", title: "Dual Scandal",           desc: "Lose 2 Swarna and 2 Shakti — war and wealth fail.",   effect: "lose_funds_clout",  value: 2, good: false },
   { id: "hl_07", title: "Dharma Questioned",      desc: "Lose 2 Satya and 1 Kirti — your virtue is doubted.",   effect: "lose_trust_media",  value: 2, good: false },
   { id: "hl_08", title: "Exposed by Sanjaya",     desc: "Lose 4 resources from your largest reserve.",          effect: "lose_largest",      value: 4, good: false },
-  { id: "hl_09", title: "Divine Favour!",         desc: "Place 1 free warrior here — the gods smile on you.",   effect: "place_voter",       value: 1, good: true  },
+  { id: "hl_09", title: "Divine Favour!",         desc: "Place 1 free warrior here — the gods smile on you.",   effect: "place_Soldier",       value: 1, good: true  },
   { id: "hl_10", title: "People's Champion!",    desc: "Gain 2 Satya — the people rally to your cause.",       effect: "gain_satya",        value: 2, good: true  },
 ];
 
@@ -382,8 +382,8 @@ function checkWin(zones) {
   return 0;
 }
 
-// Apply voter cost reductions from ideology powers
-function getvoterCost(player, baseCost) {
+// Apply Soldier cost reductions from ideology powers
+function getSoldierCost(player, baseCost) {
   const cost = { ...baseCost };
   // Level 3 progressive: Helping Hands — 2 discounts per turn, only after power is activated
   if (player.helpingHandsActive && (player.helpingHandsUsed || 0) < 2) {
@@ -427,7 +427,7 @@ function createInitialState(players) {
     usedPowers: {},  // tracks once-per-turn powers per key e.g. { donations: true }
   });
 
-  const voterDeck    = shuffle([...voter_CARDS]);
+  const SoldierDeck    = shuffle([...Soldier_CARDS]);
   const headlineDeck = shuffle(HEADLINE_CARDS.map(c => c.id));
 
   return {
@@ -437,12 +437,12 @@ function createInitialState(players) {
     turn:          1,
     phase:         "ideology",
     currentCard:   null,
-    voterCards:    voterDeck.slice(0, 4),
-    voterDeck:     voterDeck.slice(4).map(c => c.id),
+    SoldierCards:    SoldierDeck.slice(0, 4),
+    SoldierDeck:     SoldierDeck.slice(4).map(c => c.id),
     cardDeck:      shuffle(IDEOLOGY_CARDS.map(c => c.id)),
     conspiracyDeck: shuffle(CONSPIRACY_CARDS.map(c => c.id)),
     headlineDeck,
-    pendingHeadline: null,   // set when a voter enters volatile zone
+    pendingHeadline: null,   // set when a Soldier enters volatile zone
     log:           [],
     winner:        null,
     scores:        { 1: 0, 2: 0 },
@@ -487,7 +487,7 @@ function answerCard(state, slot, choice) {
 
   clampResources(player);
 
-  // Check Level 5 populist: place 1 free voter after answering
+  // Check Level 5 populist: place 1 free Soldier after answering
   const freePegZone = player.ideologyCards.sama >= 5
     ? s.zones.findIndex(z => z.pegs.length < z.capacity && checkMajority(z) === null)
     : -1;
@@ -502,37 +502,37 @@ function answerCard(state, slot, choice) {
   if (freePegZone >= 0) {
     s.zones[freePegZone].pegs.push(slot);
     s.log.unshift({ turn: s.turn, slot, type: "power",
-      text: `${player.username} placed 1 free voter (Cult Following) in ${s.zones[freePegZone].name}` });
+      text: `${player.username} placed 1 free Soldier (Cult Following) in ${s.zones[freePegZone].name}` });
   }
 
   s.currentCard = null;
   s.phase = "action";
   player.usedPowers = {};
-  s.voterCards = _refreshvoterCards(s);
+  s.SoldierCards = _refreshSoldierCards(s);
 
   return ok(s);
 }
 
-// ─── Influence voter Card ─────────────────────────────────────────────────────
+// ─── Influence Soldier Card ─────────────────────────────────────────────────────
 
-function influencevoterCard(state, slot, voterCardId, zoneIndex) {
+function influenceSoldierCard(state, slot, SoldierCardId, zoneIndex) {
   if (state.phase !== "action")   return err("Not in action phase");
   if (state.currentSlot !== slot) return err("Not your turn");
 
   const s      = JSON.parse(JSON.stringify(state));
   const player = s.players.find(p => p.slot === slot);
   const zone   = s.zones[zoneIndex];
-  const card   = s.voterCards.find(c => c.id === voterCardId);
+  const card   = s.SoldierCards.find(c => c.id === SoldierCardId);
 
   if (!zone)  return err("Invalid zone");
-  if (!card)  return err("voter card not available");
-  // Majority does NOT lock a zone — players can keep placing voters (affects gerrymander)
+  if (!card)  return err("Soldier card not available");
+  // Majority does NOT lock a zone — players can keep placing Soldiers (affects gerrymander)
 
   const spacesLeft = zone.capacity - zone.pegs.length;
-  if (spacesLeft < card.voterCount) return err(`Need ${card.voterCount} spaces, only ${spacesLeft} left`);
+  if (spacesLeft < card.SoldierCount) return err(`Need ${card.SoldierCount} spaces, only ${spacesLeft} left`);
 
   // Apply power discounts
-  const cost = getvoterCost(player, card.cost);
+  const cost = getSoldierCost(player, card.cost);
   if (!canAfford(player, cost)) {
     return err(`Need ${Object.entries(cost).map(([r,v]) => `${v} ${r}`).join(", ")}`);
   }
@@ -544,23 +544,23 @@ function influencevoterCard(state, slot, voterCardId, zoneIndex) {
     if (player.helpingHandsUsed >= 2) player.helpingHandsActive = false;
   }
 
-  // Level 3 populist: Going Viral — +1 extra voter per card
-  const extravoters = player.ideologyCards.sama >= 3 ? 1 : 0;
-  const totalvoters = card.voterCount + extravoters;
+  // Level 3 populist: Going Viral — +1 extra Soldier per card
+  const extraSoldiers = player.ideologyCards.sama >= 3 ? 1 : 0;
+  const totalSoldiers = card.SoldierCount + extraSoldiers;
   const actualSpacesLeft = zone.capacity - zone.pegs.length;
-  const votersToPlace = Math.min(totalvoters, actualSpacesLeft);
+  const SoldiersToPlace = Math.min(totalSoldiers, actualSpacesLeft);
 
   // Level 5 populist: Election Fever — +1 gerrymander/zone
   if (player.ideologyCards.sama >= 5) {
     s.electionFeverActive = true;
   }
 
-  // Place voters — last slot in zone is volatile, triggers headline against the placer
+  // Place Soldiers — last slot in zone is volatile, triggers headline against the placer
   const volatileSlotIndex = zone.capacity - 1; // last slot is volatile
-  for (let i = 0; i < votersToPlace; i++) {
+  for (let i = 0; i < SoldiersToPlace; i++) {
     const filledSlotIndex = zone.pegs.length; // index before pushing
     zone.pegs.push(slot);
-    // If this voter filled the volatile slot (last slot), trigger headline
+    // If this Soldier filled the volatile slot (last slot), trigger headline
     if (filledSlotIndex === volatileSlotIndex && !s.pendingHeadline) {
       // Reshuffle deck if exhausted
       if (s.headlineDeck.length === 0) {
@@ -574,25 +574,25 @@ function influencevoterCard(state, slot, voterCardId, zoneIndex) {
     }
   }
 
-  s.log.unshift({ turn: s.turn, slot, type: "influence_voter",
-    text: `${player.username} placed ${votersToPlace} voter${votersToPlace > 1 ? "s" : ""} (${card.label}) in ${zone.name}` });
+  s.log.unshift({ turn: s.turn, slot, type: "influence_Soldier",
+    text: `${player.username} placed ${SoldiersToPlace} Soldier${SoldiersToPlace > 1 ? "s" : ""} (${card.label}) in ${zone.name}` });
 
-  // Replace used voter card
-  s.voterCards = s.voterCards.filter(c => c.id !== voterCardId);
+  // Replace used Soldier card
+  s.SoldierCards = s.SoldierCards.filter(c => c.id !== SoldierCardId);
   // Reshuffle if deck is empty
-  if (s.voterDeck.length === 0) {
-    const currentIds = new Set(s.voterCards.map(c => c.id));
-    s.voterDeck = shuffle(voter_CARDS.filter(c => !currentIds.has(c.id)).map(c => c.id));
-    s.log.unshift({ turn: s.turn, slot, type: "info", text: "🔄 voter card deck reshuffled." });
+  if (s.SoldierDeck.length === 0) {
+    const currentIds = new Set(s.SoldierCards.map(c => c.id));
+    s.SoldierDeck = shuffle(Soldier_CARDS.filter(c => !currentIds.has(c.id)).map(c => c.id));
+    s.log.unshift({ turn: s.turn, slot, type: "info", text: "🔄 Soldier card deck reshuffled." });
   }
-  const newId = s.voterDeck.shift();
-  const newCard = voter_CARDS.find(c => c.id === newId);
-  if (newCard) s.voterCards.push(newCard);
+  const newId = s.SoldierDeck.shift();
+  const newCard = Soldier_CARDS.find(c => c.id === newId);
+  if (newCard) s.SoldierCards.push(newCard);
 
   return ok(_checkGameEnd(s));
 }
 
-// ─── progressive L3: Helping Hands — 2 discount tokens on voter cards ───────────
+// ─── progressive L3: Helping Hands — 2 discount tokens on Soldier cards ───────────
 function helpingHands(state, slot) {
   if (state.phase !== "action")   return err("Not in action phase");
   if (state.currentSlot !== slot) return err("Not your turn");
@@ -600,11 +600,11 @@ function helpingHands(state, slot) {
   const player = s.players.find(p => p.slot === slot);
   if (player.ideologyCards.dharma < 3) return err("Need 3 Dharma cards for Draupadi's Grace");
   if (player.usedPowers['helping_hands']) return err("Already used this power this turn");
-  player.helpingHandsActive = true;  // enables discount in getvoterCost
+  player.helpingHandsActive = true;  // enables discount in getSoldierCost
   player.helpingHandsUsed = 0;       // tracks how many of the 2 discounts used
   player.usedPowers['helping_hands'] = true;
   s.log.unshift({ turn: s.turn, slot, type: "power",
-    text: `${player.username} used Helping Hands — 2 voter card discounts active` });
+    text: `${player.username} used Helping Hands — 2 Soldier card discounts active` });
   return ok(s);
 }
 
@@ -641,14 +641,14 @@ function resolveHeadline(state, slot) {
       player[richest] = Math.max(0, player[richest] - headline.value);
       break;
     }
-    case "remove_voter": {
+    case "remove_Soldier": {
       const zone = s.zones.find(z => z.name === headline.zoneName);
       if (zone && zone.pegs.includes(headline.triggerSlot)) {
         zone.pegs.splice(zone.pegs.lastIndexOf(headline.triggerSlot), 1);
       }
       break;
     }
-    case "remove_voter_and_shakti": {
+    case "remove_Soldier_and_shakti": {
       const zone = s.zones.find(z => z.name === headline.zoneName);
       if (zone && zone.pegs.includes(headline.triggerSlot)) {
         zone.pegs.splice(zone.pegs.lastIndexOf(headline.triggerSlot), 1);
@@ -656,7 +656,7 @@ function resolveHeadline(state, slot) {
       player.shakti = Math.max(0, player.shakti - 1);
       break;
     }
-    case "place_voter": {
+    case "place_Soldier": {
       const zone = s.zones.find(z => z.name === headline.zoneName);
       if (zone && zone.pegs.length < zone.capacity) {
         zone.pegs.push(headline.triggerSlot);
@@ -704,12 +704,12 @@ function gerrymander(state, slot, fromZoneIndex, toZoneIndex, pegOwnerSlot, righ
   // Cannot move majority-forming pegs
   const myPegsInFrom = fromZ.pegs.filter(p => p === pegOwnerSlot).length;
   if (checkMajority(fromZ) === pegOwnerSlot && myPegsInFrom <= fromZ.majority) {
-    return err("Cannot gerrymander majority-forming voters");
+    return err("Cannot gerrymander majority-forming Soldiers");
   }
-  // Level 3 nationalist: opponent cannot remove your majority voters via gerrymander
+  // Level 3 nationalist: opponent cannot remove your majority Soldiers via gerrymander
   if (pegOwnerSlot !== slot && checkMajority(fromZ) === pegOwnerSlot &&
       s.players.find(p => p.slot === pegOwnerSlot)?.ideologyCards?.danda >= 3) {
-    return err("Opponent\'s majority voters are protected by Stronghold");
+    return err("Opponent\'s majority Soldiers are protected by Stronghold");
   }
 
   // Track used rights by the RIGHTS zone index (not fromZone)
@@ -717,7 +717,7 @@ function gerrymander(state, slot, fromZoneIndex, toZoneIndex, pegOwnerSlot, righ
   if (s.gerrymanderUsed[rIdx]) return err(`Already used gerrymander rights of ${rZ.name} this turn`);
 
   const pegIdx = fromZ.pegs.lastIndexOf(pegOwnerSlot);
-  if (pegIdx === -1) return err("No such voter in that zone");
+  if (pegIdx === -1) return err("No such Soldier in that zone");
 
   fromZ.pegs.splice(pegIdx, 1);
   toZ.pegs.push(pegOwnerSlot);
@@ -725,7 +725,7 @@ function gerrymander(state, slot, fromZoneIndex, toZoneIndex, pegOwnerSlot, righ
 
   const movedName = s.players.find(p => p.slot === pegOwnerSlot)?.username || `P${pegOwnerSlot}`;
   s.log.unshift({ turn: s.turn, slot, type: "gerrymander",
-    text: `${player.username} gerrymandered ${movedName}'s voter: ${fromZ.name} → ${toZ.name} (using ${rZ.name} rights)` });
+    text: `${player.username} gerrymandered ${movedName}'s Soldier: ${fromZ.name} → ${toZ.name} (using ${rZ.name} rights)` });
 
   // Headline triggers when this move fills the last slot of the destination zone
   if (toZ.pegs.length === toZ.capacity && !s.pendingHeadline) {
@@ -803,30 +803,30 @@ function useConspiracy(state, slot, instanceId, params = {}) {
   const card = player.conspiracies[cardIdx];
 
   switch (card.effect) {
-    case "remove_opponent_voter": {
+    case "remove_opponent_Soldier": {
       const zoneIndex = params.zoneIndex ?? s.zones.findIndex(z => z.pegs.includes(oppSlot) && checkMajority(z) === null);
       const zone = s.zones[zoneIndex];
       if (!zone) return err("No valid target zone");
       if (checkMajority(zone) !== null) return err("Zone is locked");
-      // Level 3 nationalist protects majority voters
+      // Level 3 nationalist protects majority Soldiers
       const isProtected = opp?.ideologyCards?.danda >= 3 && checkMajority(zone) === oppSlot;
-      if (isProtected) return err("Opponent's majority voters are protected by Stronghold");
+      if (isProtected) return err("Opponent's majority Soldiers are protected by Stronghold");
       let removed = 0;
       while (removed < 2 && zone.pegs.includes(oppSlot)) {
         zone.pegs.splice(zone.pegs.lastIndexOf(oppSlot), 1); removed++;
       }
       s.log.unshift({ turn: s.turn, slot, type: "conspiracy",
-        text: `${player.username} ran Smear Campaign — removed ${removed} of ${opp.username}'s voters from ${zone.name}` });
+        text: `${player.username} ran Smear Campaign — removed ${removed} of ${opp.username}'s Soldiers from ${zone.name}` });
       break;
     }
-    case "place_free_voters": {
+    case "place_free_Soldiers": {
       const zoneIdx = params.zoneIndex ?? s.zones.findIndex(z => z.pegs.length + 3 <= z.capacity && checkMajority(z) === null);
       const zone = s.zones[zoneIdx];
       if (!zone || checkMajority(zone) !== null) return err("No valid zone");
       const canPlace = Math.min(3, zone.capacity - zone.pegs.length);
       for (let i = 0; i < canPlace; i++) zone.pegs.push(slot);
       s.log.unshift({ turn: s.turn, slot, type: "conspiracy",
-        text: `${player.username} used Bloc Mobilization — placed ${canPlace} voters in ${zone.name}` });
+        text: `${player.username} used Bloc Mobilization — placed ${canPlace} Soldiers in ${zone.name}` });
       break;
     }
     case "steal_kirti":   opp.kirti   = Math.max(0, opp.kirti   - 3); s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} invoked Drona's Silence on ${opp.username}` }); break;
@@ -840,11 +840,11 @@ function useConspiracy(state, slot, instanceId, params = {}) {
       const fz = s.zones[fromZone], tz = s.zones[toZone];
       if (!fz || !tz) return err("Invalid zones");
       if (!fz.adjacentZones.includes(toZone)) return err("Zones must be adjacent");
-      // Only block if the voter being moved IS the majority holder's voter AND they have majority
+      // Only block if the Soldier being moved IS the majority holder's Soldier AND they have majority
       const majority = checkMajority(fz);
-      if (majority !== null && majority === pegOwner) return err("Cannot move majority voters");
+      if (majority !== null && majority === pegOwner) return err("Cannot move majority Soldiers");
       const pi = fz.pegs.lastIndexOf(pegOwner);
-      if (pi === -1) return err("No such voter in that zone");
+      if (pi === -1) return err("No such Soldier in that zone");
       fz.pegs.splice(pi, 1); tz.pegs.push(pegOwner);
       s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} used Swing Vote` });
       // Headline if this move fills the last slot
@@ -867,14 +867,14 @@ function useConspiracy(state, slot, instanceId, params = {}) {
         text: `${player.username} used Opposition Research — stole ${stolen} ${richest} from ${opp.username}` });
       break;
     }
-    case "convert_voter": {
+    case "convert_Soldier": {
       // Level 5 nationalist power
       const zoneIdx = params.zoneIndex ?? s.zones.findIndex(z => gerrymanderRights(z) === slot && z.pegs.includes(oppSlot));
       const zone = s.zones[zoneIdx];
-      if (!zone || !zone.pegs.includes(oppSlot)) return err("No opponent voter to convert");
+      if (!zone || !zone.pegs.includes(oppSlot)) return err("No opponent Soldier to convert");
       const pi = zone.pegs.lastIndexOf(oppSlot);
       zone.pegs[pi] = slot;
-      s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} converted an opponent voter in ${zone.name}` });
+      s.log.unshift({ turn: s.turn, slot, type: "conspiracy", text: `${player.username} converted an opponent Soldier in ${zone.name}` });
       break;
     }
     default: return err("Unknown conspiracy effect");
@@ -953,7 +953,7 @@ function donations(state, slot) {
   return ok(s);
 }
 
-// nationalist L5: Payback — discard 2 opponent voters from any zone
+// nationalist L5: Payback — discard 2 opponent Soldiers from any zone
 function payback(state, slot, zoneIndex) {
   if (state.phase !== "action")   return err("Not in action phase");
   if (state.currentSlot !== slot) return err("Not your turn");
@@ -971,11 +971,11 @@ function payback(state, slot, zoneIndex) {
   }
   player.usedPowers['payback'] = true;
   s.log.unshift({ turn: s.turn, slot, type: "power",
-    text: `${player.username} used Payback — discarded ${removed} voters from ${zone.name}` });
+    text: `${player.username} used Payback — discarded ${removed} Soldiers from ${zone.name}` });
   return ok(_checkGameEnd(s));
 }
 
-// corporatist L5: Breaking Ground — evict 3 voters from any zone
+// corporatist L5: Breaking Ground — evict 3 Soldiers from any zone
 function breakingGround(state, slot, zoneIndex) {
   if (state.phase !== "action")   return err("Not in action phase");
   if (state.currentSlot !== slot) return err("Not your turn");
@@ -989,11 +989,11 @@ function breakingGround(state, slot, zoneIndex) {
   const removed = zone.pegs.splice(Math.max(0, zone.pegs.length - 3));
   player.usedPowers['breaking_ground'] = true;
   s.log.unshift({ turn: s.turn, slot, type: "power",
-    text: `${player.username} used Breaking Ground — evicted ${removed.length} voters from ${zone.name}` });
+    text: `${player.username} used Breaking Ground — evicted ${removed.length} Soldiers from ${zone.name}` });
   return ok(_checkGameEnd(s));
 }
 
-// progressive L5: Tough Love — convert 2 opponent voters in zones you lead
+// progressive L5: Tough Love — convert 2 opponent Soldiers in zones you lead
 function toughLove(state, slot, zoneIndex) {
   if (state.phase !== "action")   return err("Not in action phase");
   if (state.currentSlot !== slot) return err("Not your turn");
@@ -1010,10 +1010,10 @@ function toughLove(state, slot, zoneIndex) {
     const i = zone.pegs.lastIndexOf(oppSlot);
     zone.pegs[i] = slot; converted++;
   }
-  if (converted === 0) return err("No opponent voters to convert");
+  if (converted === 0) return err("No opponent Soldiers to convert");
   player.usedPowers['tough_love'] = true;
   s.log.unshift({ turn: s.turn, slot, type: "power",
-    text: `${player.username} used Tough Love — converted ${converted} voters in ${zone.name}` });
+    text: `${player.username} used Tough Love — converted ${converted} Soldiers in ${zone.name}` });
   return ok(_checkGameEnd(s));
 }
 
@@ -1069,19 +1069,19 @@ function _advanceTurn(state) {
   return state;
 }
 
-function _refreshvoterCards(state) {
+function _refreshSoldierCards(state) {
   // Keep any cards already showing, fill up to 4 from deck
-  const needed = 4 - state.voterCards.length;
-  if (needed <= 0) return state.voterCards;
+  const needed = 4 - state.SoldierCards.length;
+  if (needed <= 0) return state.SoldierCards;
   // Reshuffle deck if not enough cards
-  if (state.voterDeck.length < needed) {
-    const currentIds = new Set(state.voterCards.map(c => c.id));
-    const deckIds    = new Set(state.voterDeck);
-    const remaining  = voter_CARDS.filter(c => !currentIds.has(c.id) && !deckIds.has(c.id)).map(c => c.id);
-    state.voterDeck  = [...state.voterDeck, ...shuffle(remaining)];
+  if (state.SoldierDeck.length < needed) {
+    const currentIds = new Set(state.SoldierCards.map(c => c.id));
+    const deckIds    = new Set(state.SoldierDeck);
+    const remaining  = Soldier_CARDS.filter(c => !currentIds.has(c.id) && !deckIds.has(c.id)).map(c => c.id);
+    state.SoldierDeck  = [...state.SoldierDeck, ...shuffle(remaining)];
   }
-  const drawn = state.voterDeck.splice(0, needed);
-  return [...state.voterCards, ...drawn.map(id => voter_CARDS.find(c => c.id === id)).filter(Boolean)];
+  const drawn = state.SoldierDeck.splice(0, needed);
+  return [...state.SoldierCards, ...drawn.map(id => Soldier_CARDS.find(c => c.id === id)).filter(Boolean)];
 }
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
@@ -1090,7 +1090,7 @@ module.exports = {
   createInitialState,
   drawCard,
   answerCard,
-  influencevoterCard,
+  influenceSoldierCard,
   gerrymander,
   buyConspiracy,
   useConspiracy,
@@ -1109,7 +1109,7 @@ module.exports = {
   getScores,
   dominantIdeology,
   IDEOLOGY_CARDS,
-  voter_CARDS,
+  Soldier_CARDS,
   CONSPIRACY_CARDS,
   getConspiracyCost,
   HEADLINE_CARDS,
