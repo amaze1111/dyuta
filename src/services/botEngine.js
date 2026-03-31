@@ -1,477 +1,361 @@
-const WebSocket = require('ws');
-const jwt       = require('jsonwebtoken');
-const pool      = require('../db/pool');
-const engine    = require('../services/gameEngine');
-const bot       = require('../services/botEngine');
+/**
+ * SHASN Bot Engine
+ * Makes strategic decisions for the AI opponent (slot 2).
+ * Called by the socket handler after the bot's ideology card is drawn.
+ */
 
-const rooms          = new Map();
-const activeSessions = new Map();
-const matchmakingQueue = new Map();
+const engine = require('./gameEngine');
 
-function send(ws, event, payload = {}) {
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ event, ...payload }));
+// ─── Bot difficulty levels ────────────────────────────────────────────────────
+// easy:   random decisions
+// medium: basic strategy (greedy)
+// hard:   full strategy (zone control + blocking)
+
+const DIFFICULTY = process.env.BOT_DIFFICULTY || 'medium';
+
+// ─── Main entry point ─────────────────────────────────────────────────────────
+
+/**
+ * Run a full bot turn: answer ideology card + take all affordable actions.
+ * Returns the final game state after all bot moves.
+ */
+async function runBotTurn(state, botSlot = 2) {
+  let current = JSON.parse(JSON.stringify(state));
+
+  // Step 1: Answer ideology card
+  if (current.phase === 'ideology' && current.currentCard) {
+    current = botAnswerCard(current, botSlot);
+  }
+
+  // Step 2: Take actions until bot decides to end turn
+  let safetyLimit = 20; // prevent infinite loops
+  while (current.phase === 'action' && current.currentSlot === botSlot && safetyLimit-- > 0) {
+    const action = chooseBotAction(current, botSlot);
+    if (!action) break; // bot chose to end turn
+
+    const result = executeBotAction(current, botSlot, action);
+    if (!result.ok) break; // action failed, end turn
+    current = result.state;
+
+    if (current.phase === 'finished') break;
+
+    // Small delay feel (handled by caller via setTimeout)
+  }
+
+  // Step 3: End turn if still in action phase
+  if (current.phase === 'action' && current.currentSlot === botSlot) {
+    const endResult = engine.endTurn(current, botSlot);
+    if (endResult.ok) current = endResult.state;
+  }
+
+  return current;
+}
+
+// ─── Answer ideology card ─────────────────────────────────────────────────────
+
+function botAnswerCard(state, botSlot) {
+  const card = state.currentCard;
+  if (!card) return state;
+
+  let choice;
+  if (DIFFICULTY === 'easy') {
+    choice = Math.random() < 0.5 ? 'a' : 'b';
   } else {
-    console.warn(`send(${event}) dropped - ws not OPEN (readyState=${ws.readyState}, slot=${ws._slot})`);
-  }
-}
+    // Medium/Hard: pick the option that gives the most total resources
+    const aTotal = Object.values(card.a.resources).reduce((s, v) => s + v, 0);
+    const bTotal = Object.values(card.b.resources).reduce((s, v) => s + v, 0);
 
-function broadcast(roomCode, event, payload = {}) {
-  const clients = rooms.get(roomCode);
-  if (!clients) return;
-  const msg = JSON.stringify({ event, ...payload });
-  clients.forEach(ws => { if (ws.readyState === WebSocket.OPEN) ws.send(msg); });
-}
-
-async function isBotRoom(code) {
-  const { rows: [room] } = await pool.query('SELECT is_bot FROM rooms WHERE code = $1', [code]);
-  return room?.is_bot === true;
-}
-
-module.exports = function attachWebSocket(server) {
-  const wss = new WebSocket.Server({ server, path: '/ws' });
-
-  wss.on('connection', (ws, req) => {
-    const url   = new URL(req.url, 'http://localhost');
-    const token = url.searchParams.get('token');
-    if (!token) { ws.close(4001, 'Missing token'); return; }
-
-    let user;
-    try { user = jwt.verify(token, process.env.JWT_SECRET); }
-    catch { ws.close(4001, 'Invalid token'); return; }
-
-    ws.isAlive = true;
-    ws.on('pong', () => { ws.isAlive = true; });
-    ws._user = user;
-    ws._roomCode = null;
-    ws._slot = null;
-
-    ws.on('message', async (raw) => {
-      let msg;
-      try { msg = JSON.parse(raw); } catch { return; }
-      const { event, ...payload } = msg;
-
-      switch (event) {
-        case 'room:join':             await handleRoomJoin(ws, user, payload); break;
-        case 'room:ready':            await handleReady(ws, user, payload); break;
-        case 'ping':                  break;
-        case 'room:leave':            handleRoomLeave(ws); break;
-        case 'queue:join':            await handleQueueJoin(ws, user); break;
-        case 'queue:cancel':          handleQueueCancel(ws, user); break;
-        case 'game:answer_card':      await handleMutate(ws, payload.roomCode, s => engine.answerCard(s, ws._slot, payload.choice)); break;
-        case 'game:influence_voter':  await handleMutate(ws, payload.roomCode, s => engine.influenceVoterCard(s, ws._slot, payload.voterCardId, payload.zoneIndex)); break;
-        case 'game:influence_soldier': await handleMutate(ws, payload.roomCode, s => engine.influenceSoldierCard(s, ws._slot, payload.soldierCardId, payload.zoneIndex)); break;
-        case 'game:gerrymander':      await handleMutate(ws, payload.roomCode, s => engine.gerrymander(s, ws._slot, payload.fromZoneIndex, payload.toZoneIndex, payload.pegOwnerSlot, payload.rightsZoneIndex)); break;
-        case 'game:buy_conspiracy':   await handleMutate(ws, payload.roomCode, s => engine.buyConspiracy(s, ws._slot, payload.payment || null)); break;
-        case 'game:use_conspiracy':   await handleMutate(ws, payload.roomCode, s => engine.useConspiracy(s, ws._slot, payload.instanceId, payload.params || {})); break;
-        case 'game:convert_resource': await handleMutate(ws, payload.roomCode, s => engine.convertResource(s, ws._slot, payload.from, payload.to)); break;
-        case 'game:prospecting':      await handleMutate(ws, payload.roomCode, s => engine.prospecting(s, ws._slot, payload.from, payload.to)); break;
-        case 'game:donations':        await handleMutate(ws, payload.roomCode, s => engine.donations(s, ws._slot)); break;
-        case 'game:payback':          await handleMutate(ws, payload.roomCode, s => engine.payback(s, ws._slot, payload.zoneIndex)); break;
-        case 'game:breaking_ground':  await handleMutate(ws, payload.roomCode, s => engine.breakingGround(s, ws._slot, payload.zoneIndex)); break;
-        case 'game:tough_love':       await handleMutate(ws, payload.roomCode, s => engine.toughLove(s, ws._slot, payload.zoneIndex)); break;
-        case 'game:helping_hands':    await handleMutate(ws, payload.roomCode, s => engine.helpingHands(s, ws._slot)); break;
-        case 'game:end_turn':         await handleMutate(ws, payload.roomCode, s => engine.endTurn(s, ws._slot)); break;
-        default: send(ws, 'game:error', { message: `Unknown event: ${event}` });
-      }
-    });
-
-    ws.on('close', () => {
-      const code = ws._roomCode;
-      if (code) {
-        const clients = rooms.get(code);
-        if (clients) { clients.delete(ws); if (clients.size === 0) rooms.delete(code); }
-      }
-      if (ws._user) matchmakingQueue.delete(ws._user.userId);
-    });
-  });
-
-  const pingInterval = setInterval(() => {
-    wss.clients.forEach(ws => {
-      if (!ws.isAlive) { ws.terminate(); return; }
-      ws.isAlive = false; ws.ping();
-    });
-  }, 30000);
-
-  wss.on('close', () => clearInterval(pingInterval));
-  console.log('WebSocket server ready at /ws');
-};
-
-function generateCode() {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
-async function handleQueueJoin(ws, user) {
-  if (matchmakingQueue.has(user.userId)) {
-    return send(ws, 'queue:waiting', { position: matchmakingQueue.size });
-  }
-
-  const waiting = [...matchmakingQueue.values()].find(e => e.ws.readyState === WebSocket.OPEN);
-
-  if (waiting) {
-    matchmakingQueue.delete(waiting.user.userId);
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      let code, exists = true;
-      while (exists) {
-        code = generateCode();
-        const { rows } = await client.query("SELECT id FROM rooms WHERE code = $1 AND status != 'finished'", [code]);
-        exists = rows.length > 0;
-      }
-      const { rows: [room] } = await client.query(
-        `INSERT INTO rooms (code, host_id) VALUES ($1, $2) RETURNING *`,
-        [code, waiting.user.userId]
-      );
-      await client.query(
-        `INSERT INTO room_players (room_id, user_id, slot, ideology, is_ready) VALUES ($1, $2, 1, 'none', false)`,
-        [room.id, waiting.user.userId]
-      );
-      await client.query(
-        `INSERT INTO room_players (room_id, user_id, slot, ideology, is_ready) VALUES ($1, $2, 2, 'none', false)`,
-        [room.id, user.userId]
-      );
-      await client.query('COMMIT');
-
-      send(waiting.ws, 'queue:matched', { roomCode: code });
-      send(ws, 'queue:matched', { roomCode: code });
-    } catch (e) {
-      await client.query('ROLLBACK');
-      console.error('Matchmaking error:', e);
-      send(ws, 'game:error', { message: 'Matchmaking failed. Please try again.' });
-      matchmakingQueue.set(waiting.user.userId, waiting);
-    } finally {
-      client.release();
-    }
-  } else {
-    matchmakingQueue.set(user.userId, { ws, user });
-    send(ws, 'queue:waiting', { position: matchmakingQueue.size });
-  }
-}
-
-function handleQueueCancel(ws, user) {
-  matchmakingQueue.delete(user.userId);
-  send(ws, 'queue:cancelled', {});
-}
-
-function handleRoomLeave(ws) {
-  const code = ws._roomCode;
-  if (!code) return;
-  const clients = rooms.get(code);
-  if (clients) {
-    clients.delete(ws);
-    if (clients.size === 0) rooms.delete(code);
-  }
-  ws._roomCode = null;
-}
-
-async function handleRoomJoin(ws, user, { roomCode }) {
-  const code = roomCode?.toUpperCase();
-  if (!code) return send(ws, 'game:error', { message: 'roomCode required' });
-  try {
-    const { rows: [room] } = await pool.query('SELECT * FROM rooms WHERE code = $1', [code]);
-    if (!room) return send(ws, 'game:error', { message: 'Room not found' });
-
-    const { rows: players } = await pool.query(
-      `SELECT rp.slot, rp.ideology, rp.is_ready, u.username, u.id as user_id
-       FROM room_players rp JOIN users u ON rp.user_id = u.id
-       WHERE rp.room_id = $1 ORDER BY rp.slot`, [room.id]
-    );
-
-    const me = players.find(p => p.user_id === user.userId);
-    if (!me) return send(ws, 'game:error', { message: 'You are not in this room' });
-
-    if (!rooms.has(code)) rooms.set(code, new Set());
-    const existingClients = rooms.get(code);
-    for (const existing of existingClients) {
-      if (existing._slot === me.slot && existing !== ws) {
-        existingClients.delete(existing);
-      }
-    }
-    existingClients.add(ws);
-    ws._roomCode = code;
-    ws._slot = me.slot;
-
-    if (room.status === 'playing') {
-      let state = activeSessions.get(code);
-      if (!state) {
-        const { rows: [game] } = await pool.query(
-          'SELECT state, id FROM games WHERE room_id = $1 ORDER BY created_at DESC LIMIT 1', [room.id]
-        );
-        if (game) {
-          const parsed = typeof game.state === 'string' ? JSON.parse(game.state) : game.state;
-          state = { ...parsed, gameId: game.id };
-          activeSessions.set(code, state);
-        }
-      }
-      if (state) {
-        const mySlot = ws._slot;
-        const sanitizedPlayers = state.players.map(p => {
-          if (p.slot === mySlot) return p;
-          return { ...p, conspiracies: p.conspiracies.map(() => ({ id: 'hidden', instanceId: 'hidden', name: '???', desc: 'Hidden', effect: 'hidden', cost: 0 })) };
-        });
-        const myPlayer = state.players.find(p => p.slot === mySlot);
-        let conspiracyCost = 4;
-        if (myPlayer && state.conspiracyDeck && state.conspiracyDeck.length > 0) {
-          const topCard = engine.CONSPIRACY_CARDS.find(c => c.id === state.conspiracyDeck[0]);
-          if (topCard) conspiracyCost = engine.getConspiracyCost(myPlayer, topCard.cost);
-        }
-        send(ws, 'game:state', { state: { ...state, currentCard: null, players: sanitizedPlayers, conspiracyCost }, mySlot });
-        if (state.currentCard && state.currentSlot === ws._slot) {
-          send(ws, 'game:card', { card: state.currentCard });
-        }
-      }
-    }
-
-    const botRoom = room.is_bot === true;
-    const wsSet = rooms.get(code) || new Set();
-    const roomPayload = {
-      room: { id: room.id, code: room.code, status: room.status },
-      players: players.map(p => ({
-        slot: p.slot,
-        username: p.slot === 2 && botRoom ? 'Bot' : p.username,
-        isReady: p.is_ready
-      })),
-      isBotRoom: botRoom,
-    };
-    for (const client of wsSet) {
-      send(client, 'room:state', { ...roomPayload, mySlot: client._slot });
-    }
-    if (ws._slot && ![...wsSet].includes(ws)) {
-      send(ws, 'room:state', { ...roomPayload, mySlot: ws._slot });
-    }
-  } catch (e) {
-    console.error('room:join error', e);
-    send(ws, 'game:error', { message: 'Failed to join room' });
-  }
-}
-
-async function handleReady(ws, user, { roomCode }) {
-  const code = roomCode?.toUpperCase();
-  try {
-    const { rows: [room] } = await pool.query("SELECT * FROM rooms WHERE code = $1 AND status = 'waiting'", [code]);
-    if (!room) return send(ws, 'game:error', { message: 'Room not found or already started' });
-
-    await pool.query(
-      'UPDATE room_players SET is_ready = NOT is_ready WHERE room_id = $1 AND user_id = $2',
-      [room.id, user.userId]
-    );
-
-    const { rows: players } = await pool.query(
-      `SELECT rp.slot, rp.ideology, rp.is_ready, u.username, u.id as user_id
-       FROM room_players rp JOIN users u ON rp.user_id = u.id WHERE rp.room_id = $1`, [room.id]
-    );
-
-    const botRoom = room.is_bot === true;
-    const wsSet = rooms.get(code) || new Set();
-    const roomPayload = {
-      room: { id: room.id, code: room.code, status: room.status },
-      players: players.map(p => ({
-        slot: p.slot,
-        username: p.slot === 2 && botRoom ? 'Bot' : p.username,
-        isReady: p.is_ready
-      })),
-      isBotRoom: botRoom,
-    };
-    for (const client of wsSet) {
-      send(client, 'room:state', { ...roomPayload, mySlot: client._slot });
-    }
-    if (ws._slot && ![...wsSet].includes(ws)) {
-      send(ws, 'room:state', { ...roomPayload, mySlot: ws._slot });
-    }
-
-    if (botRoom) {
-      const humanPlayer = players.find(p => p.user_id === user.userId);
-      if (humanPlayer?.is_ready) {
-        await startGame(code, room, players);
-      }
+    if (DIFFICULTY === 'hard') {
+      // Also consider which ideology we want to build up
+      const bot = state.players.find(p => p.slot === botSlot);
+      const aScore = aTotal + ideologyBonus(bot, card.a.ideology);
+      const bScore = bTotal + ideologyBonus(bot, card.b.ideology);
+      choice = aScore >= bScore ? 'a' : 'b';
     } else {
-      const allReady = players.length === room.max_players && players.every(p => p.is_ready);
-      if (allReady) await startGame(code, room, players);
+      choice = aTotal >= bTotal ? 'a' : 'b';
     }
-  } catch (e) {
-    console.error('room:ready error', e);
-    send(ws, 'game:error', { message: 'Failed to toggle ready' });
+  }
+
+  const result = engine.answerCard(state, botSlot, choice);
+  return result.ok ? result.state : state;
+}
+
+// ─── Choose next action ───────────────────────────────────────────────────────
+
+function chooseBotAction(state, botSlot) {
+  const bot = state.players.find(p => p.slot === botSlot);
+  const opponent = state.players.find(p => p.slot !== botSlot);
+  if (!bot) return null;
+
+  const affordableSoldierCards = state.SoldierCards.filter(c => canBotAfford(bot, c.cost));
+  const canBuyConspiracy = bot.totalResources >= 4 || 
+    Object.values(bot).filter(v => typeof v === 'number').some(() => false); // recalc below
+
+  const totalRes = bot.funds + bot.clout + bot.media + bot.trust;
+  const canBuyAnyConspiracy = totalRes >= 4;
+  const hasConspiracies = bot.conspiracies && bot.conspiracies.length > 0;
+
+  if (DIFFICULTY === 'easy') {
+    return chooseEasyAction(state, botSlot, affordableSoldierCards, canBuyAnyConspiracy, hasConspiracies);
+  } else if (DIFFICULTY === 'medium') {
+    return chooseMediumAction(state, botSlot, bot, opponent, affordableSoldierCards, canBuyAnyConspiracy, hasConspiracies);
+  } else {
+    return chooseHardAction(state, botSlot, bot, opponent, affordableSoldierCards, canBuyAnyConspiracy, hasConspiracies);
   }
 }
 
-async function handleMutate(ws, roomCode, mutateFn) {
-  const code = roomCode?.toUpperCase();
-  if (!ws._slot) return send(ws, 'game:error', { message: 'Not in a room' });
-
-  let state = activeSessions.get(code);
-  if (!state) return send(ws, 'game:error', { message: 'No active game' });
-
-  const result = mutateFn(state);
-  if (!result.ok) return send(ws, 'game:error', { message: result.error });
-
-  let newState = result.state;
-
-  if (newState.phase === 'ideology' && !newState.currentCard && newState.winner === null) {
-    const drawn = engine.drawCard(newState);
-    if (drawn.ok) newState = drawn.state;
-  }
-
-  newState = await persistAndBroadcast(code, newState, state.gameId);
-
-  const { rows: [room] } = await pool.query('SELECT is_bot FROM rooms WHERE code = $1', [code]);
-  if (room?.is_bot && newState.currentSlot === 2 && newState.phase !== 'finished' && newState.winner === null) {
-    setTimeout(() => runBotTurnForRoom(code, newState.gameId), 1200);
-  }
+function chooseEasyAction(state, botSlot, affordableCards, canBuyConspiracy, hasConspiracies) {
+  const options = [];
+  if (affordableCards.length > 0) options.push('influence_Soldier');
+  if (canBuyConspiracy) options.push('buy_conspiracy');
+  if (hasConspiracies && Math.random() < 0.3) options.push('use_conspiracy');
+  options.push(null); // end turn
+  return options[Math.floor(Math.random() * options.length)];
 }
 
-async function runBotTurnForRoom(code, gameId) {
-  let state = activeSessions.get(code);
-  if (!state || state.winner !== null || state.phase === 'finished') return;
-  if (state.currentSlot !== 2) return;
+function chooseMediumAction(state, botSlot, bot, opponent, affordableCards, canBuyConspiracy, hasConspiracies) {
+  // Priority: influence Soldiers > use conspiracy if helpful > buy conspiracy > gerrymander > end turn
 
-  try {
-    if (state.phase === 'ideology' && !state.currentCard) {
-      const drawn = engine.drawCard(state);
-      if (drawn.ok) state = drawn.state;
-    }
+  // If we have a Soldier card that can lock a zone, do it immediately
+  const urgentCard = findZoneLockingCard(state, botSlot, affordableCards);
+  if (urgentCard) return { type: 'influence_Soldier', card: urgentCard };
 
-    let finalState = await bot.runBotTurn(state, 2);
+  // Use conspiracy if we have one and it's useful
+  if (hasConspiracies && bot.conspiracies.length > 0) {
+    return { type: 'use_conspiracy', card: bot.conspiracies[0] };
+  }
 
-    if (finalState.phase === 'ideology' && !finalState.currentCard && finalState.winner === null) {
-      const drawn = engine.drawCard(finalState);
-      if (drawn.ok) finalState = drawn.state;
-    }
+  // Place Soldiers in best zone
+  if (affordableCards.length > 0) {
+    const bestCard = chooseBestSoldierCard(state, botSlot, affordableCards);
+    if (bestCard) return { type: 'influence_Soldier', card: bestCard };
+  }
 
-    await persistAndBroadcast(code, finalState, gameId);
-  } catch (e) {
-    console.error('Bot turn error:', e);
-    let recoveryState = activeSessions.get(code) || state;
-    if (!recoveryState || recoveryState.winner !== null || recoveryState.phase === 'finished') return;
-    if (recoveryState.currentSlot !== 2) return;
+  // Buy conspiracy if we have enough resources and nothing else to do
+  if (canBuyConspiracy && bot.funds + bot.clout + bot.media + bot.trust >= 6) {
+    return { type: 'buy_conspiracy' };
+  }
 
-    if (recoveryState.phase === 'ideology') {
-      if (!recoveryState.currentCard) {
-        const drawn = engine.drawCard(recoveryState);
-        if (drawn.ok) recoveryState = drawn.state;
+  // Gerrymander if possible
+  const gerryMove = findGerrymanderMove(state, botSlot);
+  if (gerryMove) return { type: 'gerrymander', ...gerryMove };
+
+  return null; // end turn
+}
+
+function chooseHardAction(state, botSlot, bot, opponent, affordableCards, canBuyConspiracy, hasConspiracies) {
+  // Hard bot: block opponent majorities, prioritise high-value zones
+
+  // Emergency block: opponent is one peg away from majority in a high-value zone
+  const blockMove = findBlockingMove(state, botSlot, affordableCards);
+  if (blockMove) return blockMove;
+
+  // Lock a zone we're leading in
+  const lockCard = findZoneLockingCard(state, botSlot, affordableCards);
+  if (lockCard) return { type: 'influence_Soldier', card: lockCard };
+
+  // Use conspiracy strategically
+  if (hasConspiracies) {
+    const bestConspiracy = chooseBestConspiracy(state, botSlot);
+    if (bestConspiracy) return { type: 'use_conspiracy', card: bestConspiracy };
+  }
+
+  // Place Soldiers in highest-value zone we can win
+  if (affordableCards.length > 0) {
+    const bestCard = chooseBestSoldierCard(state, botSlot, affordableCards);
+    if (bestCard) return { type: 'influence_Soldier', card: bestCard };
+  }
+
+  // Gerrymander to disrupt opponent
+  const gerryMove = findGerrymanderMove(state, botSlot);
+  if (gerryMove) return { type: 'gerrymander', ...gerryMove };
+
+  if (canBuyConspiracy) return { type: 'buy_conspiracy' };
+
+  return null;
+}
+
+// ─── Execute bot action ───────────────────────────────────────────────────────
+
+function executeBotAction(state, botSlot, action) {
+  if (!action) return { ok: false };
+
+  if (action.type === 'influence_Soldier') {
+    const card = action.card;
+    const zoneIndex = chooseBestZone(state, botSlot, card.SoldierCount);
+    if (zoneIndex === -1) return { ok: false, error: 'No valid zone' };
+    return engine.influenceSoldierCard(state, botSlot, card.id, zoneIndex);
+  }
+
+  if (action.type === 'gerrymander') {
+    return engine.gerrymander(state, botSlot, action.fromZone, action.toZone, action.pegOwner);
+  }
+
+  if (action.type === 'buy_conspiracy') {
+    // Pick a random conspiracy to buy
+    const conspiracyIds = ['cc_01','cc_02','cc_03','cc_04','cc_05','cc_06','cc_07','cc_08','cc_09'];
+    const pick = conspiracyIds[Math.floor(Math.random() * conspiracyIds.length)];
+    return engine.buyConspiracy(state, botSlot, pick);
+  }
+
+  if (action.type === 'use_conspiracy') {
+    const card = action.card;
+    const params = buildConspiracyParams(state, botSlot, card);
+    return engine.useConspiracy(state, botSlot, card.instanceId, params);
+  }
+
+  return { ok: false, error: 'Unknown action' };
+}
+
+// ─── Strategic helpers ────────────────────────────────────────────────────────
+
+function canBotAfford(bot, cost) {
+  return Object.entries(cost).every(([r, v]) => bot[r] >= v);
+}
+
+function ideologyBonus(bot, ideology) {
+  // Slight bonus for building the ideology we're already invested in
+  const counts = bot.ideologyCards;
+  const dom = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  return ideology === dom ? 1 : 0;
+}
+
+function zoneScore(zone, botSlot) {
+  // How desirable is this zone? Higher = better to place in
+  if (engine.checkMajority(zone) !== null) return -1; // already decided
+
+  const myPegs = zone.pegs.filter(p => p === botSlot).length;
+  const oppPegs = zone.pegs.filter(p => p !== botSlot).length;
+  const spacesLeft = zone.capacity - zone.pegs.length;
+
+  // Score based on: point value, how close we are to majority, available space
+  const proximityToMajority = myPegs / zone.majority;
+  const leadBonus = myPegs > oppPegs ? 2 : 0;
+
+  return zone.points * (1 + proximityToMajority) + leadBonus;
+}
+
+function chooseBestZone(state, botSlot, SoldierCount) {
+  let best = -1, bestScore = -Infinity;
+  state.zones.forEach((zone, index) => {
+    if (engine.checkMajority(zone) !== null) return;
+    if (zone.capacity - zone.pegs.length < SoldierCount) return;
+    const score = zoneScore(zone, botSlot);
+    if (score > bestScore) { bestScore = score; best = index; }
+  });
+  return best;
+}
+
+function chooseBestSoldierCard(state, botSlot, affordableCards) {
+  // Pick the card that gives the most Soldiers going to our best zone
+  return affordableCards.reduce((best, card) => {
+    if (!best) return card;
+    return card.SoldierCount > best.SoldierCount ? card : best;
+  }, null);
+}
+
+function findZoneLockingCard(state, botSlot, affordableCards) {
+  // Find a Soldier card that would complete a majority in a zone we're leading
+  for (const card of affordableCards) {
+    for (const zone of state.zones) {
+      if (engine.checkMajority(zone) !== null) continue;
+      const myPegs = zone.pegs.filter(p => p === botSlot).length;
+      const spacesLeft = zone.capacity - zone.pegs.length;
+      if (spacesLeft >= card.SoldierCount && myPegs + card.SoldierCount >= zone.majority) {
+        return card;
       }
-      if (recoveryState.currentCard) {
-        const answered = engine.answerCard(recoveryState, 2, 'a');
-        if (answered.ok) recoveryState = answered.state;
-      }
     }
-
-    if (recoveryState.phase === 'action' && recoveryState.currentSlot === 2) {
-      const ended = engine.endTurn(recoveryState, 2);
-      if (ended.ok) recoveryState = ended.state;
-    }
-
-    if (recoveryState.phase === 'ideology' && !recoveryState.currentCard && recoveryState.winner === null) {
-      const drawn = engine.drawCard(recoveryState);
-      if (drawn.ok) recoveryState = drawn.state;
-    }
-
-    await persistAndBroadcast(code, recoveryState, gameId);
   }
+  return null;
 }
 
-async function persistAndBroadcast(code, state, gameId) {
-  await pool.query(
-    `UPDATE games SET state = $1, turn = $2, current_slot = $3, phase = $4, winner_slot = $5, updated_at = NOW() WHERE id = $6`,
-    [JSON.stringify(state), state.turn, state.currentSlot, state.phase, state.winner ?? null, gameId]
-  );
-  activeSessions.set(code, { ...state, gameId });
+function findBlockingMove(state, botSlot, affordableCards) {
+  const oppSlot = botSlot === 1 ? 2 : 1;
+  // Find zones where opponent is close to majority
+  for (const [zoneIndex, zone] of state.zones.entries()) {
+    if (engine.checkMajority(zone) !== null) continue;
+    const oppPegs = zone.pegs.filter(p => p === oppSlot).length;
+    const spacesLeft = zone.capacity - zone.pegs.length;
+    const oppNeedsMore = zone.majority - oppPegs;
 
-  const wsSet = rooms.get(code) || new Set();
-  for (const ws of wsSet) {
-    if (!ws._slot) continue;
-    const mySlot = ws._slot;
-    const sanitizedPlayers = state.players.map(p => {
-      if (p.slot === mySlot) return p;
-      return {
-        ...p,
-        conspiracies: p.conspiracies.map(() => ({
-          id: 'hidden', instanceId: 'hidden',
-          name: '???', desc: 'Hidden', effect: 'hidden', cost: 0
-        }))
-      };
-    });
-    const myPlayer = state.players.find(p => p.slot === mySlot);
-    let conspiracyCost = 4;
-    if (myPlayer && state.conspiracyDeck && state.conspiracyDeck.length > 0) {
-      const topCardId = state.conspiracyDeck[0];
-      const topCard = engine.CONSPIRACY_CARDS.find(c => c.id === topCardId);
-      if (topCard) conspiracyCost = engine.getConspiracyCost(myPlayer, topCard.cost);
-    }
-    const stateForPlayer = { ...state, currentCard: null, players: sanitizedPlayers, conspiracyCost };
-    send(ws, 'game:state', { state: stateForPlayer, mySlot });
-  }
-
-  if (state.currentCard) {
-    const currentWs = [...wsSet].find(w => w._slot === state.currentSlot);
-    if (currentWs) {
-      send(currentWs, 'game:card', { card: state.currentCard });
+    if (oppNeedsMore <= 2 && spacesLeft > 0) {
+      // Opponent is close — place our Soldiers here
+      const card = affordableCards.find(c => c.SoldierCount <= spacesLeft);
+      if (card) return { type: 'influence_Soldier', card, zoneIndex };
     }
   }
-
-  if (state.winner !== null) await handleGameOver(code, state, gameId);
-  return state;
+  return null;
 }
 
-async function startGame(code, room, players) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query("UPDATE rooms SET status = 'playing', started_at = NOW() WHERE id = $1", [room.id]);
+function findGerrymanderMove(state, botSlot) {
+  const oppSlot = botSlot === 1 ? 2 : 1;
 
-    const initialState = engine.createInitialState(
-      players.map(p => ({
-        slot: p.slot,
-        userId: p.user_id,
-        username: room.is_bot && p.slot === 2 ? 'Bot' : p.username
-      }))
-    );
-    const { state } = engine.drawCard(initialState);
+  for (const [fromIndex, fromZone] of state.zones.entries()) {
+    if (engine.gerrymanderRights(fromZone) !== botSlot) continue;
+    if (engine.checkMajority(fromZone) !== null) continue;
 
-    const { rows: [game] } = await client.query(
-      'INSERT INTO games (room_id, state, turn, current_slot, phase) VALUES ($1, $2, 1, 1, $3) RETURNING id',
-      [room.id, JSON.stringify(state), state.phase]
-    );
-
-    activeSessions.set(code, { ...state, gameId: game.id });
-    await client.query('COMMIT');
-
-    const startWsSet = rooms.get(code) || new Set();
-    for (const ws of startWsSet) {
-      const stateForPlayer = { ...state, currentCard: null };
-      send(ws, 'game:state', { state: stateForPlayer, mySlot: ws._slot });
-    }
-    const slot1Ws = [...startWsSet].find(w => w._slot === 1);
-    if (slot1Ws) send(slot1Ws, 'game:card', { card: state.currentCard });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    console.error('startGame error', e);
-    broadcast(code, 'game:error', { message: 'Failed to start game' });
-  } finally {
-    client.release();
-  }
-}
-
-async function handleGameOver(code, state, gameId) {
-  const scores = engine.getScores(state.zones);
-  await pool.query("UPDATE games SET phase = 'finished', winner_slot = $1 WHERE id = $2", [state.winner || null, gameId]);
-  await pool.query("UPDATE rooms SET status = 'finished', finished_at = NOW() WHERE code = $1", [code]);
-  const { rows: [room] } = await pool.query('SELECT is_bot FROM rooms WHERE code = $1', [code]);
-  if (!room?.is_bot) {
-    for (const player of state.players) {
-      if (state.winner !== 0 && state.winner !== null) {
-        const won = state.winner === player.slot;
-        await pool.query(`UPDATE users SET ${won ? 'wins' : 'losses'} = ${won ? 'wins' : 'losses'} + 1 WHERE id = $1`, [player.userId]).catch(() => {});
+    // Look for opponent pegs we can move OUT to a bad zone
+    if (fromZone.pegs.includes(oppSlot)) {
+      for (const toIndex of fromZone.adjacentZones) {
+        const toZone = state.zones[toIndex];
+        if (engine.checkMajority(toZone) !== null) continue;
+        if (toZone.pegs.length >= toZone.capacity) continue;
+        return { fromZone: fromIndex, toZone: toIndex, pegOwner: oppSlot };
       }
     }
   }
-  broadcast(code, 'game:over', { winner: state.winner, scores });
-  activeSessions.delete(code);
+  return null;
 }
 
-module.exports.markAsBotRoom = function(code) {
-  // No-op
-};
+function chooseBestConspiracy(state, botSlot) {
+  const bot = state.players.find(p => p.slot === botSlot);
+  if (!bot?.conspiracies?.length) return null;
+  // Prefer attack cards over resource gain
+  const priority = ['remove_opponent_Soldier', 'steal_funds', 'steal_media', 'place_free_Soldiers', 'gain_funds', 'gain_clout'];
+  for (const effect of priority) {
+    const card = bot.conspiracies.find(c => c.effect === effect);
+    if (card) return card;
+  }
+  return bot.conspiracies[0];
+}
+
+function buildConspiracyParams(state, botSlot, card) {
+  const oppSlot = botSlot === 1 ? 2 : 1;
+  const params = {};
+
+  if (card.effect === 'remove_opponent_Soldier') {
+    // Target zone where opponent has most pegs but no majority
+    const target = state.zones
+      .map((z, i) => ({ z, i }))
+      .filter(({ z }) => z.pegs.includes(oppSlot) && engine.checkMajority(z) === null)
+      .sort((a, b) => b.z.pegs.filter(p => p === oppSlot).length - a.z.pegs.filter(p => p === oppSlot).length)[0];
+    if (target) params.zoneIndex = target.i;
+  }
+
+  if (card.effect === 'place_free_Soldiers') {
+    const best = chooseBestZone(state, botSlot, 3);
+    if (best !== -1) params.zoneIndex = best;
+  }
+
+  if (card.effect === 'swing_vote') {
+    // Move opponent peg from their strong zone to a worse one
+    for (const [fromIndex, fromZone] of state.zones.entries()) {
+      if (!fromZone.pegs.includes(oppSlot)) continue;
+      if (engine.checkMajority(fromZone) !== null) continue;
+      for (const toIndex of fromZone.adjacentZones) {
+        const toZone = state.zones[toIndex];
+        if (toZone.pegs.length < toZone.capacity && engine.checkMajority(toZone) === null) {
+          params.fromZone = fromIndex;
+          params.toZone = toIndex;
+          params.pegOwner = oppSlot;
+          break;
+        }
+      }
+      if (params.fromZone !== undefined) break;
+    }
+  }
+
+  return params;
+}
+
+module.exports = { runBotTurn };
