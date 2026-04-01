@@ -21,7 +21,7 @@ async function seedBotUser() {
       VALUES ('00000000-0000-0000-0000-000000000001', 'BOT', 'bot@shasn.internal', 'no-auth')
       ON CONFLICT (id) DO NOTHING
     `);
-    console.log('🤖 Bot user ready');
+    console.log('Bot user ready');
   } catch (e) { console.error('Bot user seed failed:', e.message); }
 }
 seedBotUser();
@@ -29,6 +29,13 @@ seedBotUser();
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
+
+app.use((err, _req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Invalid JSON body' });
+  }
+  return next(err);
+});
 
 if (process.env.NODE_ENV !== 'production') {
   app.use((req, _res, next) => { console.log(`${req.method} ${req.path}`); next(); });
@@ -46,11 +53,9 @@ attachWebSocket(server);
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`
-╔══════════════════════════════════════╗
-║   🗳  SHASN Backend                  ║
-║   HTTP  →  http://localhost:${PORT}    ║
-║   WS    →  ws://localhost:${PORT}/ws  ║
-╚══════════════════════════════════════╝
+Backend ready
+HTTP -> http://localhost:${PORT}
+WS   -> ws://localhost:${PORT}/ws
   `);
 });
 
