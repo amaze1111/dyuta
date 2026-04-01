@@ -209,15 +209,14 @@ async function verifyFacebookAccessToken(accessToken) {
   };
 }
 
-// POST /auth/register
 router.post('/register', async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password } = req.body ?? {};
 
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'username, email and password are required' });
   }
   if (username.length < 3 || username.length > 32) {
-    return res.status(400).json({ error: 'username must be 3–32 characters' });
+    return res.status(400).json({ error: 'username must be 3-32 characters' });
   }
   if (password.length < 6) {
     return res.status(400).json({ error: 'password must be at least 6 characters' });
@@ -232,7 +231,7 @@ router.post('/register', async (req, res) => {
     });
     res.status(201).json({ user: sanitizeUser(user), token: signToken(user) });
   } catch (e) {
-    if (e.code === '23505') { // unique violation
+    if (e.code === '23505') {
       const field = e.constraint?.includes('email') ? 'email' : 'username';
       return res.status(409).json({ error: `That ${field} is already taken` });
     }
@@ -241,9 +240,8 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /auth/login
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body ?? {};
   if (!email || !password) {
     return res.status(400).json({ error: 'email and password are required' });
   }
@@ -263,7 +261,7 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/google', async (req, res) => {
-  const { idToken } = req.body;
+  const { idToken } = req.body ?? {};
   if (!idToken) {
     return res.status(400).json({ error: 'Google ID token is required' });
   }
@@ -281,7 +279,7 @@ router.post('/google', async (req, res) => {
 });
 
 router.post('/facebook', async (req, res) => {
-  const { accessToken } = req.body;
+  const { accessToken } = req.body ?? {};
   if (!accessToken) {
     return res.status(400).json({ error: 'Facebook access token is required' });
   }
@@ -298,7 +296,6 @@ router.post('/facebook', async (req, res) => {
   }
 });
 
-// GET /auth/me  (requires token)
 router.get('/me', require('../middleware/auth').authMiddleware, async (req, res) => {
   try {
     const { rows } = await pool.query(
