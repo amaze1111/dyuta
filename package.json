@@ -1,7 +1,7 @@
 {
   "name": "shasn-backend",
   "version": "1.0.0",
-  "description": "SHASN multiplayer game backend — Node.js + Socket.IO",
+  "description": "Multiplayer game backend — Node.js + Socket.IO",
   "main": "src/index.js",
   "scripts": {
     "old_start": "node src/index.js",
