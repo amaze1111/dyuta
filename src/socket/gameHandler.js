@@ -315,7 +315,7 @@ async function handleRoomJoin(ws, user, { roomCode }) {
       room: { id: room.id, code: room.code, status: room.status },
       players: players.map(p => ({
         slot: p.slot,
-        username: p.slot === 2 && botRoom ? '🤖 Bot' : p.username,
+        username: p.slot === 2 && botRoom ? 'Bot' : p.username,
         isReady: p.is_ready
       })),
       isBotRoom: botRoom,
@@ -543,6 +543,24 @@ async function startGame(code, room, players) {
 
     // Send sanitized state to each player (no currentCard, no opponent conspiracies)
     const startWsSet = rooms.get(code) || new Set();
+    // IMPORTANT: also send room:state with status=playing so Android clients navigate out of the waiting room.
+    {
+      const botRoom = room.is_bot === true;
+      const roomPayload = {
+        room: { id: room.id, code: room.code, status: 'playing' },
+        players: [...players]
+          .sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0))
+          .map(p => ({
+            slot: p.slot,
+            username: p.slot === 2 && botRoom ? '🤖 Bot' : p.username,
+            isReady: p.is_ready,
+          })),
+        isBotRoom: botRoom,
+      };
+      for (const ws of startWsSet) {
+        send(ws, 'room:state', { ...roomPayload, mySlot: ws._slot });
+      }
+    }
     for (const ws of startWsSet) {
       const stateForPlayer = normalizeStateForClient({ ...state, currentCard: null });
       send(ws, 'game:state', { state: stateForPlayer, mySlot: ws._slot });
@@ -581,3 +599,4 @@ async function handleGameOver(code, state, gameId) {
 module.exports.markAsBotRoom = function(code) {
   // No-op — bot status now stored in DB
 };
+
