@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS game_events (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   game_id    UUID REFERENCES games(id) ON DELETE CASCADE,
   slot       INTEGER NOT NULL,
-  event_type VARCHAR(50) NOT NULL,          -- answer_card | place_soldier | gerrymander | use_conspiracy | buy_conspiracy | end_turn
+  event_type VARCHAR(50) NOT NULL,          -- answer_card | place_soldier | incursion | use_conspiracy | buy_conspiracy | end_turn
   payload    JSONB NOT NULL DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
