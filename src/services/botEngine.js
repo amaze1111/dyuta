@@ -6,15 +6,15 @@ const engine = require('./gameEngine');
 const DIFFICULTY = process.env.BOT_DIFFICULTY || 'medium';
 
 function availableCards(state) {
-  return state.voterCards || state.soldierCards || [];
+  return state.soldierCards || [];
 }
 
 function cardUnits(card) {
-  return card?.voterCount ?? card?.soldierCount ?? 0;
+  return card?.soldierCount ?? 0;
 }
 
 function totalBotResources(player) {
-  return (player?.suvarna || 0) + (player?.shakti || 0) + (player?.kirti || 0) + (player?.satya || 0);
+  return (player?.swarna || 0) + (player?.shakti || 0) + (player?.kirti || 0) + (player?.satya || 0);
 }
 
 async function runBotTurn(state, botSlot = 2) {
@@ -90,7 +90,7 @@ function chooseBotAction(state, botSlot) {
 
 function chooseEasyAction(affordableCards, canBuyConspiracy, hasConspiracies) {
   const options = [];
-  if (affordableCards.length > 0) options.push({ type: 'influence_voter', card: affordableCards[0] });
+  if (affordableCards.length > 0) options.push({ type: 'influence_soldier', card: affordableCards[0] });
   if (canBuyConspiracy) options.push({ type: 'buy_conspiracy' });
   if (hasConspiracies && Math.random() < 0.3) options.push({ type: 'use_conspiracy' });
   options.push(null);
@@ -99,15 +99,15 @@ function chooseEasyAction(affordableCards, canBuyConspiracy, hasConspiracies) {
 
 function chooseMediumAction(state, botSlot, bot, opponent, affordableCards, canBuyConspiracy, hasConspiracies) {
   const urgentCard = findZoneLockingCard(state, botSlot, affordableCards);
-  if (urgentCard) return { type: 'influence_voter', card: urgentCard };
+  if (urgentCard) return { type: 'influence_soldier', card: urgentCard };
 
   if (hasConspiracies && bot.conspiracies.length > 0) {
     return { type: 'use_conspiracy', card: bot.conspiracies[0] };
   }
 
   if (affordableCards.length > 0) {
-    const bestCard = chooseBestVoterCard(affordableCards);
-    if (bestCard) return { type: 'influence_voter', card: bestCard };
+    const bestCard = chooseBestSoldierCard(affordableCards);
+    if (bestCard) return { type: 'influence_soldier', card: bestCard };
   }
 
   if (canBuyConspiracy && totalBotResources(bot) >= 6) {
@@ -125,7 +125,7 @@ function chooseHardAction(state, botSlot, bot, opponent, affordableCards, canBuy
   if (blockMove) return blockMove;
 
   const lockCard = findZoneLockingCard(state, botSlot, affordableCards);
-  if (lockCard) return { type: 'influence_voter', card: lockCard };
+  if (lockCard) return { type: 'influence_soldier', card: lockCard };
 
   if (hasConspiracies) {
     const bestConspiracy = chooseBestConspiracy(state, botSlot);
@@ -133,17 +133,17 @@ function chooseHardAction(state, botSlot, bot, opponent, affordableCards, canBuy
   }
 
   if (affordableCards.length > 0) {
-    const bestCard = chooseBestVoterCard(affordableCards);
-    if (bestCard) return { type: 'influence_voter', card: bestCard };
+    const bestCard = chooseBestSoldierCard(affordableCards);
+    if (bestCard) return { type: 'influence_soldier', card: bestCard };
   }
 
   const incursionMove = findIncursionMove(state, botSlot);
   if (incursionMove) return { type: 'incursion', ...incursion }
-  if (action.type === 'influence_voter') {
+  if (action.type === 'influence_soldier') {
     const card = action.card;
     const zoneIndex = action.zoneIndex ?? chooseBestZone(state, botSlot, cardUnits(card));
     if (zoneIndex === -1) return { ok: false, error: 'No valid zone' };
-    return engine.influenceVoterCard(state, botSlot, card.id, zoneIndex);
+    return engine.influenceSoldierCard(state, botSlot, card.id, zoneIndex);
   }
 
   if (action.type === 'incursion') {
@@ -184,12 +184,12 @@ function zoneScore(zone, botSlot) {
   return zone.points * (1 + proximityToMajority) + leadBonus;
 }
 
-function chooseBestZone(state, botSlot, voterCount) {
+function chooseBestZone(state, botSlot, soldierCount) {
   let best = -1;
   let bestScore = -Infinity;
   state.zones.forEach((zone, index) => {
     if (engine.checkMajority(zone) !== null) return;
-    if (zone.capacity - zone.pegs.length < voterCount) return;
+    if (zone.capacity - zone.pegs.length < soldierCount) return;
     const score = zoneScore(zone, botSlot);
     if (score > bestScore) {
       bestScore = score;
@@ -199,7 +199,7 @@ function chooseBestZone(state, botSlot, voterCount) {
   return best;
 }
 
-function chooseBestVoterCard(affordableCards) {
+function chooseBestSoldierCard(affordableCards) {
   return affordableCards.reduce((best, card) => {
     if (!best) return card;
     return cardUnits(card) > cardUnits(best) ? card : best;
@@ -231,7 +231,7 @@ function findBlockingMove(state, botSlot, affordableCards) {
 
     if (oppNeedsMore <= 2 && spacesLeft > 0) {
       const card = affordableCards.find(c => cardUnits(c) <= spacesLeft);
-      if (card) return { type: 'influence_voter', card, zoneIndex };
+      if (card) return { type: 'influence_soldier', card, zoneIndex };
     }
   }
   return null;
@@ -266,7 +266,7 @@ function buildConspiracyParams(state, botSlot, card) {
   const oppSlot = botSlot === 1 ? 2 : 1;
   const params = {};
 
-  if (card.effect === 'remove_opponent_voter') {
+  if (card.effect === 'remove_opponent_soldier') {
     const target = state.zones
       .map((z, i) => ({ z, i }))
       .filter(({ z }) => z.pegs.includes(oppSlot) && engine.checkMajority(z) === null)
@@ -274,12 +274,12 @@ function buildConspiracyParams(state, botSlot, card) {
     if (target) params.zoneIndex = target.i;
   }
 
-  if (card.effect === 'place_free_voters') {
+  if (card.effect === 'place_free_soldiers') {
     const best = chooseBestZone(state, botSlot, 3);
     if (best !== -1) params.zoneIndex = best;
   }
 
-  if (card.effect === 'swing_vote') {
+  if (card.effect === 'defect_soldier') {
     for (const [fromIndex, fromZone] of state.zones.entries()) {
       if (!fromZone.pegs.includes(oppSlot)) continue;
       if (engine.checkMajority(fromZone) !== null) continue;
@@ -296,7 +296,7 @@ function buildConspiracyParams(state, botSlot, card) {
     }
   }
 
-  if (card.effect === 'convert_voter') {
+  if (card.effect === 'convert_soldier') {
     const zoneIdx = state.zones.findIndex(z => engine.incursionRights(z) === botSlot && z.pegs.includes(oppSlot));
     if (zoneIdx !== -1) params.zoneIndex = zoneIdx;
   }
