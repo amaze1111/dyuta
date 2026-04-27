@@ -403,7 +403,7 @@ function ok(state) {
 function err(msg)  { return { ok: false, error: msg }; }
 
 function syncSoldierCards(state) {
-    state.soldierCards = [];
+    // state.soldierCards = [];
     return state;
 }
 
